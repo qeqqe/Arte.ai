@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,js}\"",
+    "dev:be": "cd packages/api && pnpm run start:dev"
   },
   "keywords": [],
   "author": "",

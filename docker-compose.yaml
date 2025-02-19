@@ -1,9 +1,23 @@
 services:
-  api:
+  auth:
     build:
-      context: ./src/api
-      dockerfile: Dockerfile
+      context: ./packages/api
+      dockerfile: apps/auth/Dockerfile
+      target: development
+    command: pnpm run start:dev auth
+    env_file:
+      - ./packages/api/apps/auth/.env
     ports:
       - '3001:3001'
+    volumes:
+      - ./packages/api:/app:delegated
+      - /app/node_modules/
+      - /app/apps/auth/node_modules/
+  postgres:
+    image: postgres
+    ports:
+      - '5432:5432'
     environment:
-      - NODE_ENV=production
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: SGA-dev
