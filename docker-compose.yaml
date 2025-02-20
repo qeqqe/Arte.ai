@@ -10,9 +10,42 @@ services:
     ports:
       - '3001:3001'
     volumes:
-      - ./packages/api:/app:delegated
       - /app/node_modules/
       - /app/apps/auth/node_modules/
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/api
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - dist/
+        - action: rebuild
+          path: package.json
+
+  client:
+    build:
+      context: ./packages/client
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - '5173:5173'
+    volumes:
+      - /app/node_modules/
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/client
+          target: /app
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./packages/client/package.json
+    environment:
+      - VITE_API_URL=http://localhost:3001
+
   postgres:
     image: postgres
     ports:
