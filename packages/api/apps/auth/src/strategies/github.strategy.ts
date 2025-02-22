@@ -1,11 +1,14 @@
-import { LoggerService } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-github2';
-export class GithubStartegy extends PassportStrategy(Strategy, 'github') {
+import { Logger } from 'nestjs-pino';
+
+@Injectable()
+export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
   constructor(
     private readonly configService: ConfigService,
-    private readonly logger: LoggerService,
+    private readonly logger: Logger,
   ) {
     super({
       clientID: configService.get<string>('GITHUB_CLIENT_ID'),
@@ -17,23 +20,21 @@ export class GithubStartegy extends PassportStrategy(Strategy, 'github') {
 
   async validate(
     accessToken: string,
-    refreshToken: string,
+    _refreshToken: string,
     profile: Profile,
     done: (error: any, user?: any) => void,
   ) {
     try {
-      const { id, username, emails } = profile;
-
-      const user = {
-        githubId: id,
-        username,
-        email: emails?.[0]?.value || null,
+      const githubUser = {
+        id: profile.id,
+        username: profile.username,
+        email: profile.emails?.[0]?.value || null,
+        avatarUrl: profile._json.avatar_url,
         accessToken,
-        refreshToken,
       };
-      return done(null, user);
+      return done(null, githubUser);
     } catch (err) {
-      this.logger.error('GitHub authentication error:', err);
+      this.logger.error('GitHub validation failed', err);
       return done(err, false);
     }
   }
