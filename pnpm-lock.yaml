@@ -47,9 +47,15 @@ importers:
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       drizzle-orm:
         specifier: ^0.39.3
         version: 0.39.3(@types/pg@8.11.11)(pg@8.13.3)
+      express:
+        specifier: ^4.21.2
+        version: 4.21.2
       joi:
         specifier: ^17.13.3
         version: 17.13.3
