@@ -23,6 +23,8 @@ services:
             - dist/
         - action: rebuild
           path: package.json
+    networks:
+      - app-network
 
   client:
     build:
@@ -45,12 +47,9 @@ services:
           path: ./packages/client/package.json
     environment:
       - VITE_API_URL=http://localhost:3001
+    networks:
+      - app-network
 
-  postgres:
-    image: postgres
-    ports:
-      - '5432:5432'
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: test
-      POSTGRES_DB: SGA-dev
+networks:
+  app-network:
+    driver: bridge

@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as userSchema from '../user/user.schema';
+import * as githubSchema from '@app/common/github';
+import * as userSchema from '@app/common/user';
+
 export const DRIZZLE = Symbol('drizzle-connection');
 
 @Module({
+  imports: [ConfigModule],
   providers: [
     {
       provide: DRIZZLE,
@@ -15,13 +18,12 @@ export const DRIZZLE = Symbol('drizzle-connection');
         const NODE_ENV = config.getOrThrow<string>('NODE_ENV');
         const pool = new Pool({
           connectionString: DATABASE_URL,
-          ssl: NODE_ENV == 'production' ? true : false,
+          ssl: NODE_ENV === 'production',
         });
-        return drizzle(pool, { schema: { ...userSchema } });
+        return drizzle(pool, { schema: { ...githubSchema, ...userSchema } });
       },
     },
   ],
-
-  exports: [DRIZZLE],
+  exports: [DRIZZLE], // Make sure this is here!
 })
 export class DrizzleModule {}
