@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AuthModule } from './auth.module';
+import { IngestionModule } from './ingestion.module';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
@@ -7,8 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
-  // hybrid application (HTTP + MQ)
-  const app = await NestFactory.create(AuthModule);
+  const app = await NestFactory.create(IngestionModule);
   const logger = app.get(Logger);
   const configService = app.get(ConfigService);
 
@@ -16,7 +15,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
-      queue: 'auth',
+      queue: 'ingestion',
       noAck: false,
       persistent: true,
       queueOptions: {
@@ -27,7 +26,7 @@ async function bootstrap() {
     },
   });
 
-  const httpPort = configService.get('HTTP_PORT', 3001);
+  const httpPort = configService.get('HTTP_PORT', 3002);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.use(cookieParser());
   app.enableCors({
@@ -40,7 +39,6 @@ async function bootstrap() {
   await app.listen(httpPort);
 
   logger.log(`server running on port ${httpPort}`);
-  logger.log(`callback URL: ${configService.get('GITHUB_CALLBACK_URL')}`);
   logger.log(`node env: ${configService.get('NODE_ENV')}`);
 }
 

@@ -17,7 +17,7 @@ COPY . .
 
 EXPOSE 3001
 
-CMD ["pnpm", "run", "start:dev", "auth"]
+CMD ["pnpm", "run", "start:dev", "ingestion"]
 
 FROM node:20.18-alpine3.21 AS production
 
