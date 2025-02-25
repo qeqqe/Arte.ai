@@ -25,6 +25,7 @@ services:
           path: package.json
     networks:
       - app-network
+
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -63,6 +64,7 @@ services:
     environment:
       - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
 
+
   client:
     build:
       context: ./packages/client
@@ -86,6 +88,7 @@ services:
       - VITE_API_URL=http://localhost:3001
     networks:
       - app-network
+
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -157,3 +160,7 @@ networks:
 
 volumes:
   rabbitmq_data:
+networks:
+  app-network:
+    driver: bridge
+

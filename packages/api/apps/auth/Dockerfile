@@ -2,8 +2,14 @@ FROM node:20.18-alpine3.21 AS development
 
 WORKDIR /app
 
+
 # Add netcat for the wait-for script
 RUN apk add --no-cache netcat-openbsd
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
+
+RUN npm install -g pnpm
+RUN pnpm install
 
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
