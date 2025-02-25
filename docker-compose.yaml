@@ -107,6 +107,50 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  python-service:
+    build:
+      context: ./packages/python-ml-service
+      dockerfile: Dockerfile
+      target: development
+    container_name: python-service
+    command: uvicorn app.main:create_app --reload --host 0.0.0.0 --port 5000
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./packages/python-ml-service:/app
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/python-ml-service
+          target: /app
+          ignore:
+            - .git/
+            - __pycache__/
+            - '*.pyc'
+        - action: rebuild
+          path: requirements.txt
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - HTTP_PORT=5000
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+
 networks:
   app-network:
     driver: bridge

@@ -4,27 +4,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
-import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(IngestionModule);
   const logger = app.get(Logger);
   const configService = app.get(ConfigService);
-
-  app.connectMicroservice({
-    transport: Transport.RMQ,
-    options: {
-      urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
-      queue: 'ingestion',
-      noAck: false,
-      persistent: true,
-      queueOptions: {
-        durable: true,
-      },
-      retryAttempts: 5,
-      retryDelay: 5000,
-    },
-  });
 
   const httpPort = configService.get('HTTP_PORT', 3002);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));

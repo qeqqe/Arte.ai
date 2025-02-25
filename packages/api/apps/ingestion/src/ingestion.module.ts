@@ -5,11 +5,22 @@ import { DrizzleModule, LoggerModule } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import * as Joi from 'joi';
+import { GithubController } from './controllers/github/github.controller';
+import { LinkedinController } from './controllers/linkedin/linkedin.controller';
+import { ResumeController } from './controllers/resume/resume.controller';
+import { LeetcodeController } from './controllers/leetcode/leetcode.controller';
+import { GithubService } from './services/github/github.service';
+import { LinkedinService } from './services/linkedin/linkedin.service';
+import { ResumeService } from './services/resume/resume.service';
+import { LeetcodeService } from './services/leetcode/leetcode.service';
+import { RmqModule } from '@app/common/rmq/rmq.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
     LoggerModule,
     DrizzleModule,
+    HttpModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
@@ -24,8 +35,21 @@ import * as Joi from 'joi';
         FRONTEND_URL: Joi.string().required(),
       }),
     }),
+    RmqModule.register({ name: 'INGESTION_SERVICE' }),
   ],
-  controllers: [IngestionController],
-  providers: [IngestionService],
+  controllers: [
+    IngestionController,
+    GithubController,
+    LinkedinController,
+    ResumeController,
+    LeetcodeController,
+  ],
+  providers: [
+    IngestionService,
+    GithubService,
+    LinkedinService,
+    ResumeService,
+    LeetcodeService,
+  ],
 })
 export class IngestionModule {}

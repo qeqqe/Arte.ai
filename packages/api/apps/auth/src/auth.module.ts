@@ -11,6 +11,7 @@ import { UserService } from './user.service';
 import { TokenService } from './token.service';
 import { GithubStrategy } from './strategies/github.strategy';
 import { join } from 'path';
+import { RmqModule } from '@app/common/rmq/rmq.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { join } from 'path';
         },
       }),
     }),
+    RmqModule.register({ name: 'AUTH_SERVICE' }),
   ],
   controllers: [AuthController],
   providers: [AuthService, UserService, TokenService, GithubStrategy],
