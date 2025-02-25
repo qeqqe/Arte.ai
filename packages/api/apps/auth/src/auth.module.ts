@@ -11,6 +11,7 @@ import { UserService } from './user.service';
 import { TokenService } from './token.service';
 import { GithubStrategy } from './strategies/github.strategy';
 import { join } from 'path';
+import { RmqModule } from '@app/common/rmq/rmq.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { join } from 'path';
         FRONTEND_URL: Joi.string().required(),
         JWT_ACCESS_EXPIRATION: Joi.string().required(),
         JWT_REFRESH_EXPIRATION: Joi.string().required(),
+        RABBITMQ_URI: Joi.string().required(),
       }),
     }),
     PassportModule.register({ defaultStrategy: 'github' }),
@@ -48,6 +50,7 @@ import { join } from 'path';
         },
       }),
     }),
+    RmqModule.register({ name: 'AUTH_SERVICE' }),
   ],
   controllers: [AuthController],
   providers: [AuthService, UserService, TokenService, GithubStrategy],

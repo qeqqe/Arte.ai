@@ -4,7 +4,7 @@ services:
       context: ./packages/api
       dockerfile: apps/auth/Dockerfile
       target: development
-    command: pnpm run start:dev auth
+    command: sh -c '/wait-for.sh rabbitmq 5672 -- pnpm run start:dev auth'
     env_file:
       - ./packages/api/apps/auth/.env
     ports:
@@ -25,6 +25,43 @@ services:
           path: package.json
     networks:
       - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
+
+  ingestion:
+    build:
+      context: ./packages/api
+      dockerfile: apps/ingestion/Dockerfile
+      target: development
+    command: sh -c '/wait-for.sh rabbitmq 5672 -- pnpm run start:dev ingestion'
+    env_file:
+      - ./packages/api/apps/ingestion/.env
+    ports:
+      - '3002:3002'
+    volumes:
+      - /app/node_modules/
+      - /app/apps/ingestion/node_modules/
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/api
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - dist/
+        - action: rebuild
+          path: package.json
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
 
   client:
     build:
@@ -50,6 +87,73 @@ services:
     networks:
       - app-network
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - '5672:5672' # AMQP port
+      - '15672:15672' # Management UI port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'check_port_connectivity']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app-network
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  python-service:
+    build:
+      context: ./packages/python-ml-service
+      dockerfile: Dockerfile
+      target: development
+    container_name: python-service
+    command: uvicorn app.main:create_app --reload --host 0.0.0.0 --port 5000
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./packages/python-ml-service:/app
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/python-ml-service
+          target: /app
+          ignore:
+            - .git/
+            - __pycache__/
+            - '*.pyc'
+        - action: rebuild
+          path: requirements.txt
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+      - HTTP_PORT=5000
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  rabbitmq_data:
