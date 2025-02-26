@@ -1,32 +1,39 @@
 import { NestFactory } from '@nestjs/core';
 import { IngestionModule } from './ingestion.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
-import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(IngestionModule);
-  const logger = app.get(Logger);
-  const configService = app.get(ConfigService);
+  const app = await NestFactory.create(IngestionModule, {
+    bufferLogs: true,
+  });
 
-  const httpPort = configService.get('HTTP_PORT', 3002);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+  const configService = app.get(ConfigService);
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
+
+  app.useLogger(app.get(Logger));
+
   app.use(cookieParser());
+
   app.enableCors({
-    origin: configService.get('FRONTEND_URL'),
+    origin: frontendUrl,
     credentials: true,
   });
-  app.useLogger(logger);
 
-  await app.startAllMicroservices();
-  await app.listen(httpPort);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
 
-  logger.log(`server running on port ${httpPort}`);
-  logger.log(`node env: ${configService.get('NODE_ENV')}`);
+  const port = configService.get<number>('HTTP_PORT', 3002);
+  await app.listen(port);
+
+  const logger = app.get(Logger);
+  logger.log(`Ingestion service running on port ${port}`);
 }
 
-bootstrap().catch((error) => {
-  console.error('Failed to start auth service:', error);
-  process.exit(1);
-});
+bootstrap();

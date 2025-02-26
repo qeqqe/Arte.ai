@@ -9,28 +9,31 @@ export async function promiseRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions,
 ): Promise<T> {
-  let lastError: Error;
+  const { retries, minTimeout, maxTimeout, onRetry } = options;
 
-  for (let attempt = 1; attempt <= options.retries + 1; attempt++) {
+  let attempt = 0;
+
+  async function attempt_retry(): Promise<T> {
     try {
       return await fn();
     } catch (error) {
-      lastError = error;
+      attempt++;
 
-      if (attempt <= options.retries) {
-        if (options.onRetry) {
-          options.onRetry(error, attempt);
-        }
-
-        const timeout = Math.min(
-          Math.random() * options.minTimeout * Math.pow(2, attempt),
-          options.maxTimeout,
-        );
-
-        await new Promise((resolve) => setTimeout(resolve, timeout));
+      if (attempt >= retries) {
+        throw error;
       }
+
+      if (onRetry) {
+        onRetry(error, attempt);
+      }
+
+      const timeout = Math.min(minTimeout * Math.pow(2, attempt), maxTimeout);
+
+      await new Promise((resolve) => setTimeout(resolve, timeout));
+
+      return attempt_retry();
     }
   }
 
-  throw lastError;
+  return attempt_retry();
 }
