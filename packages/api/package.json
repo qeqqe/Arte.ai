@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/api/test/jest-e2e.json"
+    "test:e2e": "jest --config ./apps/api/test/jest-e2e.json",
+    "migrate": "ts-node scripts/run-migrations.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.0",
@@ -38,6 +39,7 @@
     "drizzle-orm": "^0.39.3",
     "express": "^4.21.2",
     "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
     "nestjs-pino": "^4.3.0",
     "passport-github2": "^0.1.12",
     "passport-jwt": "^4.0.1",
@@ -46,6 +48,7 @@
     "pg": "^8.13.3",
     "pino-http": "^10.4.0",
     "pino-pretty": "^13.0.0",
+    "postgres": "^3.4.5",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },

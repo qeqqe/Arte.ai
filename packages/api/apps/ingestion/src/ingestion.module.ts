@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IngestionController } from './ingestion.controller';
 import { IngestionService } from './ingestion.service';
-import { DrizzleModule, LoggerModule } from '@app/common';
+import { DrizzleModule, LoggerModule, AuthModule } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import * as Joi from 'joi';
@@ -21,6 +21,7 @@ import { HttpModule } from '@nestjs/axios';
     LoggerModule,
     DrizzleModule,
     HttpModule,
+    AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
@@ -33,6 +34,7 @@ import { HttpModule } from '@nestjs/axios';
         RABBITMQ_URI: Joi.string().required(),
         HTTP_PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
       }),
     }),
     RmqModule.register({ name: 'INGESTION_SERVICE' }),

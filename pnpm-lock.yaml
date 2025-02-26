@@ -64,13 +64,16 @@ importers:
         version: 16.4.7
       drizzle-orm:
         specifier: ^0.39.3
-        version: 0.39.3(@types/pg@8.11.11)(pg@8.13.3)
+        version: 0.39.3(@types/pg@8.11.11)(pg@8.13.3)(postgres@3.4.5)
       express:
         specifier: ^4.21.2
         version: 4.21.2
       joi:
         specifier: ^17.13.3
         version: 17.13.3
+      jsonwebtoken:
+        specifier: ^9.0.2
+        version: 9.0.2
       nestjs-pino:
         specifier: ^4.3.0
         version: 4.3.0(@nestjs/common@10.4.15(class-transformer@0.5.1)(class-validator@0.14.1)(reflect-metadata@0.2.2)(rxjs@7.8.1))(pino-http@10.4.0)
@@ -95,6 +98,9 @@ importers:
       pino-pretty:
         specifier: ^13.0.0
         version: 13.0.0
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.5
       reflect-metadata:
         specifier: ^0.2.0
         version: 0.2.2
@@ -3366,6 +3372,10 @@ packages:
   postgres-range@1.1.4:
     resolution: {integrity: sha512-i/hbxIE9803Alj/6ytL7UHQxRvZkI9O4Sy+J3HGc4F4oo/2eQAjTSNJ0bfxyse3bH0nuVesCk+3IRLaMtG3H6w==}
 
+  postgres@3.4.5:
+    resolution: {integrity: sha512-cDWgoah1Gez9rN3H4165peY9qfpEo+SA61oQv65O3cRUE1pOEoJWwddwcqKE8XZYjbblOJlYDlLV4h67HrEVDg==}
+    engines: {node: '>=12'}
+
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
@@ -5951,10 +5961,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.39.3(@types/pg@8.11.11)(pg@8.13.3):
+  drizzle-orm@0.39.3(@types/pg@8.11.11)(pg@8.13.3)(postgres@3.4.5):
     optionalDependencies:
       '@types/pg': 8.11.11
       pg: 8.13.3
+      postgres: 3.4.5
 
   dunder-proto@1.0.1:
     dependencies:
@@ -7517,6 +7528,8 @@ snapshots:
   postgres-interval@3.0.0: {}
 
   postgres-range@1.1.4: {}
+
+  postgres@3.4.5: {}
 
   prelude-ls@1.2.1: {}
 
