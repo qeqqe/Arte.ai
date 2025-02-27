@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as githubSchema from '@app/common/github';
 import * as userSchema from '@app/common/user';
-
+import * as leetcodeSchema from '@app/common/leetcode';
 export const DRIZZLE = Symbol('drizzle-connection');
 
 @Module({
@@ -20,7 +20,9 @@ export const DRIZZLE = Symbol('drizzle-connection');
           connectionString: DATABASE_URL,
           ssl: NODE_ENV === 'production',
         });
-        return drizzle(pool, { schema: { ...githubSchema, ...userSchema } });
+        return drizzle(pool, {
+          schema: { ...githubSchema, ...userSchema, ...leetcodeSchema },
+        });
       },
     },
   ],

@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
 import { IngestionController } from './ingestion.controller';
 import { IngestionService } from './ingestion.service';
-import { DrizzleModule, LoggerModule, AuthModule } from '@app/common';
+import {
+  DrizzleModule,
+  LoggerModule,
+  AuthModule,
+  DRIZZLE_PROVIDER,
+  DrizzleProvider,
+} from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import * as Joi from 'joi';
@@ -15,6 +21,8 @@ import { ResumeService } from './services/resume/resume.service';
 import { LeetcodeService } from './services/leetcode/leetcode.service';
 import { RmqModule } from '@app/common/rmq/rmq.module';
 import { HttpModule } from '@nestjs/axios';
+import { HealthController } from './controllers/health/health.controller';
+import { TestController } from './test.controller';
 
 @Module({
   imports: [
@@ -25,8 +33,8 @@ import { HttpModule } from '@nestjs/axios';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [
-        join(__dirname, '..', '..', '..', 'apps', 'auth', '.env'),
-        join(__dirname, '..', '.env'),
+        join(process.cwd(), 'apps', 'ingestion', '.env'),
+        join(process.cwd(), '.env'),
         '.env',
       ],
       validationSchema: Joi.object({
@@ -35,6 +43,8 @@ import { HttpModule } from '@nestjs/axios';
         HTTP_PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
+        LEETCODE_FETCH_URL: Joi.string().required(),
+        DATABASE_URL: Joi.string().required(),
       }),
     }),
     RmqModule.register({ name: 'INGESTION_SERVICE' }),
@@ -45,6 +55,8 @@ import { HttpModule } from '@nestjs/axios';
     LinkedinController,
     ResumeController,
     LeetcodeController,
+    HealthController,
+    TestController,
   ],
   providers: [
     IngestionService,
@@ -52,6 +64,14 @@ import { HttpModule } from '@nestjs/axios';
     LinkedinService,
     ResumeService,
     LeetcodeService,
+    DrizzleProvider,
+    {
+      provide: DRIZZLE_PROVIDER,
+      useFactory: async (drizzleProvider: DrizzleProvider) => {
+        return await drizzleProvider.createClient();
+      },
+      inject: [DrizzleProvider],
+    },
   ],
 })
 export class IngestionModule {}

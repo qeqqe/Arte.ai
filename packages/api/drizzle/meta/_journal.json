@@ -8,6 +8,13 @@
       "when": 1740558239244,
       "tag": "0000_cultured_ares",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1740676190221,
+      "tag": "0001_wild_gamora",
+      "breakpoints": true
     }
   ]
 }

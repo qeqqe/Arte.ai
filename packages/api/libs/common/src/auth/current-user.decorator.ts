@@ -6,7 +6,6 @@ export interface UserPayload {
   email: string;
 }
 
-// Extend express req to include user property
 declare module 'express' {
   interface Request {
     user?: UserPayload;
