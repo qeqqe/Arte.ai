@@ -14,7 +14,6 @@ import { join } from 'path';
 
 import { RmqModule } from '@app/common/rmq/rmq.module';
 
-
 @Module({
   imports: [
     LoggerModule,
@@ -39,7 +38,6 @@ import { RmqModule } from '@app/common/rmq/rmq.module';
         JWT_ACCESS_EXPIRATION: Joi.string().required(),
         JWT_REFRESH_EXPIRATION: Joi.string().required(),
         RABBITMQ_URI: Joi.string().required(),
-
       }),
     }),
     PassportModule.register({ defaultStrategy: 'github' }),

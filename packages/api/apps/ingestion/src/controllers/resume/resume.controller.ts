@@ -27,9 +27,6 @@ export class ResumeController {
     @Req() request: Request,
   ): Promise<ParsedResumeResponse> {
     const user = request['user'] as UserPayload;
-
-    this.logger.debug(`Processing resume upload for user: ${user.id}`);
-
     return this.resumeService.handleFileUpload(file, user.id);
   }
 }

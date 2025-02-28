@@ -1,1 +1,1 @@
-export { TokenResponse, TokenPayload, GithubUserDto } from './github-oauth.dto';
+export { GithubUserDto, TokenResponse, TokenPayload } from './github-oauth.dto';
