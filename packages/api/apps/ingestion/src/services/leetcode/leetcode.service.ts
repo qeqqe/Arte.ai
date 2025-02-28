@@ -85,7 +85,6 @@ export class LeetcodeService {
       }
 
       try {
-        // Convert string values to numbers where needed
         const leetcodeData: NewUserLeetcode = {
           totalSolved: Number(response.data.totalSolved),
           userId: user.id,
@@ -94,14 +93,9 @@ export class LeetcodeService {
           easySolved: Number(response.data.easySolved),
           mediumSolved: Number(response.data.mediumSolved),
           hardSolved: Number(response.data.hardSolved),
-          acceptanceRate: Number(response.data.acceptanceRate),
+          acceptanceRate: Math.round(Number(response.data.acceptanceRate)),
           ranking: Number(response.data.ranking),
         };
-
-        // Log the converted data
-        this.logger.log(
-          `Processed LeetCode data: ${JSON.stringify(leetcodeData)}`,
-        );
 
         const existingRecord = await this.drizzle
           .select()
@@ -123,7 +117,7 @@ export class LeetcodeService {
               easySolved: Number(response.data.easySolved),
               mediumSolved: Number(response.data.mediumSolved),
               hardSolved: Number(response.data.hardSolved),
-              acceptanceRate: Number(response.data.acceptanceRate),
+              acceptanceRate: Math.round(Number(response.data.acceptanceRate)),
               ranking: Number(response.data.ranking),
             })
             .where(eq(UserLeetcodeSchema.userId, user.id));
