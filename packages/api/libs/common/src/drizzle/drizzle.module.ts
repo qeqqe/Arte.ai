@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import * as githubSchema from '@app/common/github';
 import * as userSchema from '@app/common/user';
 import * as leetcodeSchema from '@app/common/leetcode';
+import * as JobPostSchema from '@app/common/jobpost';
 export const DRIZZLE = Symbol('drizzle-connection');
 
 @Module({
@@ -21,7 +22,12 @@ export const DRIZZLE = Symbol('drizzle-connection');
           ssl: NODE_ENV === 'production',
         });
         return drizzle(pool, {
-          schema: { ...githubSchema, ...userSchema, ...leetcodeSchema },
+          schema: {
+            ...githubSchema,
+            ...userSchema,
+            ...leetcodeSchema,
+            ...JobPostSchema,
+          },
         });
       },
     },

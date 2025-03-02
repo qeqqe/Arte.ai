@@ -2,7 +2,6 @@ import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { Injectable, Logger } from '@nestjs/common';
-
 @Injectable()
 export class DrizzleProvider {
   private readonly logger = new Logger(DrizzleProvider.name);
