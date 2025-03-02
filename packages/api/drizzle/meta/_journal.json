@@ -15,6 +15,13 @@
       "when": 1740676190221,
       "tag": "0001_wild_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1740915806397,
+      "tag": "0002_boring_silvermane",
+      "breakpoints": true
     }
   ]
 }
