@@ -1,10 +1,13 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { userGithubSchema } from '../github';
 import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import { UserLeetcodeSchema } from '../leetcode';
+import { userJobPosts } from '../jobpost';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   avatarUrl: text('avatar_url'),
+  resume: text('resume'),
   refreshToken: text('refresh_token').unique(),
   lastLogin: timestamp('last_login').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -14,9 +17,14 @@ export const users = pgTable('users', {
 export type User = InferSelectModel<typeof users>;
 export type NewUser = InferInsertModel<typeof users>;
 
-export const userApplicationRelations = relations(users, ({ one }) => ({
+export const userRelations = relations(users, ({ one, many }) => ({
   github: one(userGithubSchema, {
     fields: [users.id],
     references: [userGithubSchema.userId],
   }),
+  leetcode: one(UserLeetcodeSchema, {
+    fields: [users.id],
+    references: [UserLeetcodeSchema.userId],
+  }),
+  userJobPosts: many(userJobPosts),
 }));

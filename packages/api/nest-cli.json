@@ -36,6 +36,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/dtos/tsconfig.lib.json"
       }
+    },
+    "ingestion": {
+      "type": "application",
+      "root": "apps/ingestion",
+      "entryFile": "main",
+      "sourceRoot": "apps/ingestion/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ingestion/tsconfig.app.json"
+      }
     }
   }
 }

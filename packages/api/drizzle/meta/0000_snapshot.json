@@ -1,5 +1,5 @@
 {
-  "id": "a890971d-d095-4e54-8cde-6b0a32fbc0b2",
+  "id": "48fb3baa-a30d-4630-a8da-b6e99248c530",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -95,6 +95,12 @@
         },
         "avatar_url": {
           "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "resume": {
+          "name": "resume",
           "type": "text",
           "primaryKey": false,
           "notNull": false

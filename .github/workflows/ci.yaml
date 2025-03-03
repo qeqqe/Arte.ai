@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: sga
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        working-directory: ./packages/api
+        run: pnpm install
+
+      - name: Type check
+        working-directory: ./packages/api
+        run: pnpm tsc --noEmit
+
+      - name: Lint
+        working-directory: ./packages/api
+        run: pnpm lint
+
+      - name: Generate Drizzle migrations
+        working-directory: ./packages/api
+        run: pnpm drizzle-kit generate:pg
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
+
+      - name: Push Drizzle migrations
+        working-directory: ./packages/api
+        run: pnpm drizzle-kit push:pg
+        env:
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
+
+      - name: Build
+        working-directory: ./packages/api
+        run: pnpm build
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
+          HTTP_PORT: 3001
+          JWT_SECRET: test_secret
+          JWT_EXPIRATION: 900
+          JWT_ACCESS_EXPIRATION: 15m
+          JWT_REFRESH_EXPIRATION: 7d
+          GITHUB_CLIENT_ID: test_client_id
+          GITHUB_CLIENT_SECRET: test_client_secret
+          GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
+          FRONTEND_URL: http://localhost:5173
+
+      - name: Test
+        working-directory: ./packages/api
+        run: pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
+          HTTP_PORT: 3001
+          JWT_SECRET: test_secret
+          JWT_EXPIRATION: 900
+          JWT_ACCESS_EXPIRATION: 15m
+          JWT_REFRESH_EXPIRATION: 7d
+          GITHUB_CLIENT_ID: test_client_id
+          GITHUB_CLIENT_SECRET: test_client_secret
+          GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
+          FRONTEND_URL: http://localhost:5173

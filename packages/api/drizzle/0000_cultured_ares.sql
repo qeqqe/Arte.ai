@@ -12,6 +12,7 @@ CREATE TABLE "user_github_schema" (
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"avatar_url" text,
+	"resume" text,
 	"refresh_token" text,
 	"last_login" timestamp DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
