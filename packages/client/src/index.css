@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "IBM Plex Sans";
+  --font-serif: "IBM Plex Serif";
+  --font-mono: "IBM Plex Mono"
+}
+
+body {
+  font-family: "IBM Plex Sans";
+}
