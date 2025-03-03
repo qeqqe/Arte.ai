@@ -1,0 +1,1 @@
+ALTER TABLE "linkedin_jobs" ALTER COLUMN "linkedin_job_id" SET DATA TYPE bigint;

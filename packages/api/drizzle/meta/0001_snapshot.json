@@ -1,6 +1,6 @@
 {
-  "id": "1166ab68-690e-4d78-ae79-dfe1ac2dd77d",
-  "prevId": "48fb3baa-a30d-4630-a8da-b6e99248c530",
+  "id": "7029d187-8cd5-43eb-af1c-09e44b9bd533",
+  "prevId": "3269d40f-83b4-4518-974c-e2aab289f06d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -77,6 +77,127 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.linkedin_jobs": {
+      "name": "linkedin_jobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "linkedin_job_id": {
+          "name": "linkedin_job_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "job_info": {
+          "name": "job_info",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "linkedin_jobs_linkedin_job_id_unique": {
+          "name": "linkedin_jobs_linkedin_job_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "linkedin_job_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_saved_jobs": {
+      "name": "user_saved_jobs",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "linkedin_job_schema_id": {
+          "name": "linkedin_job_schema_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saved_at": {
+          "name": "saved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_saved_jobs_user_id_users_id_fk": {
+          "name": "user_saved_jobs_user_id_users_id_fk",
+          "tableFrom": "user_saved_jobs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_saved_jobs_linkedin_job_schema_id_linkedin_jobs_id_fk": {
+          "name": "user_saved_jobs_linkedin_job_schema_id_linkedin_jobs_id_fk",
+          "tableFrom": "user_saved_jobs",
+          "tableTo": "linkedin_jobs",
+          "columnsFrom": [
+            "linkedin_job_schema_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_saved_jobs_user_id_linkedin_job_schema_id_pk": {
+          "name": "user_saved_jobs_user_id_linkedin_job_schema_id_pk",
+          "columns": [
+            "user_id",
+            "linkedin_job_schema_id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

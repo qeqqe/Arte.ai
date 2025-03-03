@@ -2,6 +2,11 @@ import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { Injectable, Logger } from '@nestjs/common';
+import * as githubSchema from '../github';
+import * as userSchema from '../user';
+import * as leetcodeSchema from '../leetcode';
+import * as JobPostSchema from '../jobpost';
+
 @Injectable()
 export class DrizzleProvider {
   private readonly logger = new Logger(DrizzleProvider.name);
@@ -18,10 +23,11 @@ export class DrizzleProvider {
     try {
       const pool = new Pool({
         connectionString: databaseUrl,
-        ssl: {
-          rejectUnauthorized: false,
-        },
-        connectionTimeoutMillis: 5000,
+        ssl:
+          process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
+        connectionTimeoutMillis: 10000,
       });
 
       const client = await pool.connect();
@@ -30,7 +36,14 @@ export class DrizzleProvider {
 
       this.logger.log(`Database connection successful: ${res.rows[0].now}`);
 
-      return drizzle(pool);
+      return drizzle(pool, {
+        schema: {
+          ...githubSchema,
+          ...userSchema,
+          ...leetcodeSchema,
+          ...JobPostSchema,
+        },
+      });
     } catch (error) {
       this.logger.error(
         `Failed to connect to database: ${error.message}`,

@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1740558239244,
-      "tag": "0000_cultured_ares",
+      "when": 1741019432483,
+      "tag": "0000_lean_sumo",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1740676190221,
-      "tag": "0001_wild_gamora",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1740915806397,
-      "tag": "0002_boring_silvermane",
+      "when": 1741021298104,
+      "tag": "0001_funny_black_panther",
       "breakpoints": true
     }
   ]

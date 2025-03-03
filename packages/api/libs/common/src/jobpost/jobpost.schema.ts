@@ -1,42 +1,51 @@
-import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { users } from '../user';
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
 
-export const JobPostSchema = pgTable('jobpost', {
+export const linkedinJobs = pgTable('linkedin_jobs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  jobId: integer('job_id').notNull(),
-  jobPostInfo: text('job_post_info').notNull(),
+  linkedinJobId: text('linkedin_job_id').notNull().unique(),
+  jobInfo: text('job_info').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
-
-export const userJobPosts = pgTable('user_job_posts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id),
-  jobPostId: uuid('job_post_id')
-    .notNull()
-    .references(() => JobPostSchema.id),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-export const JobPostRelations = relations(JobPostSchema, ({ many }) => ({
-  userJobPosts: many(userJobPosts),
+export const userJobPostRelation = relations(linkedinJobs, ({ many }) => ({
+  user: many(users),
 }));
 
-export const UserJobPostRelations = relations(userJobPosts, ({ one }) => ({
-  user: one(users, {
-    fields: [userJobPosts.userId],
-    references: [users.id],
-  }),
-  jobPost: one(JobPostSchema, {
-    fields: [userJobPosts.jobPostId],
-    references: [JobPostSchema.id],
-  }),
-}));
+export type LinkedinJob = InferSelectModel<typeof linkedinJobs>;
+export type NewLinkedinJob = InferInsertModel<typeof linkedinJobs>;
 
-export type JobPost = InferSelectModel<typeof JobPostSchema>;
-export type NewJobPost = InferInsertModel<typeof JobPostSchema>;
-export type UserJobPost = InferSelectModel<typeof userJobPosts>;
-export type NewUserJobPost = InferInsertModel<typeof userJobPosts>;
+export const userFetchedJobs = pgTable(
+  'user_saved_jobs',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    linkedinJobSchemaId: uuid('linkedin_job_schema_id')
+      .notNull()
+      .references(() => linkedinJobs.id, { onDelete: 'cascade' }),
+    savedAt: timestamp('saved_at').defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.linkedinJobSchemaId] })],
+);
+
+export const userFetchedJobsRelation = relations(
+  userFetchedJobs,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userFetchedJobs.userId],
+      references: [users.id],
+    }),
+    linkedinJob: one(linkedinJobs, {
+      fields: [userFetchedJobs.linkedinJobSchemaId],
+      references: [linkedinJobs.id],
+    }),
+  }),
+);
