@@ -11,7 +11,7 @@ CREATE TABLE "user_github_schema" (
 --> statement-breakpoint
 CREATE TABLE "linkedin_jobs" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"linkedin_job_id" integer NOT NULL,
+	"linkedin_job_id" text NOT NULL,
 	"job_info" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,

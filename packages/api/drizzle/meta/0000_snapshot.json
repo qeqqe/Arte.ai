@@ -1,5 +1,5 @@
 {
-  "id": "3269d40f-83b4-4518-974c-e2aab289f06d",
+  "id": "70078f11-53af-4040-b48d-3d6479860f53",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -95,7 +95,7 @@
         },
         "linkedin_job_id": {
           "name": "linkedin_job_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
