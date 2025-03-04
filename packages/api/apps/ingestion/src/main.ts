@@ -53,7 +53,6 @@ async function bootstrap() {
       'Unable to retrieve routes - server structure is different than expected',
     );
   }
-  console.log('========================\n\n');
 
   const port = configService.get<number>('HTTP_PORT', 3002);
   await app.listen(port);

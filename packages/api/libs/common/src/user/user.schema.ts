@@ -3,7 +3,7 @@ import { userGithubSchema } from '../github';
 import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 import { UserLeetcodeSchema } from '../leetcode';
 import { userFetchedJobs } from '../jobpost';
-
+import { userPinnedRepo } from '../github';
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   avatarUrl: text('avatar_url'),
@@ -27,4 +27,5 @@ export const userRelations = relations(users, ({ one, many }) => ({
     references: [UserLeetcodeSchema.userId],
   }),
   userJobPosts: many(userFetchedJobs),
+  pinnedRepo: many(userPinnedRepo),
 }));
