@@ -108,7 +108,6 @@ jobs:
           FRONTEND_URL: http://localhost:5173
           LEETCODE_FETCH_URL: http://localhost:5000/leetcode
 
-      # Run all tests but continue even if tests fail
       - name: Run all tests (informational)
         working-directory: ./packages/api
         continue-on-error: true
@@ -126,5 +125,3 @@ jobs:
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
           FRONTEND_URL: http://localhost:5173
           LEETCODE_FETCH_URL: http://localhost:5000/leetcode
-
-  # You can add more jobs for client tests, etc.

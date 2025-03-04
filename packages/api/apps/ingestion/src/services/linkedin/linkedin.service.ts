@@ -10,7 +10,7 @@ import { firstValueFrom, catchError } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { DRIZZLE } from '@app/common';
+import { DRIZZLE_PROVIDER } from '@app/common';
 import { linkedinJobs, userFetchedJobs } from '@app/common/jobpost';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class LinkedinService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
-    @Inject(DRIZZLE)
+    @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase,
   ) {}
 
