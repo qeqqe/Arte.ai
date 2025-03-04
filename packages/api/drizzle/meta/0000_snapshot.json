@@ -1,5 +1,5 @@
 {
-  "id": "48fb3baa-a30d-4630-a8da-b6e99248c530",
+  "id": "70078f11-53af-4040-b48d-3d6479860f53",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -65,6 +65,229 @@
         "user_github_schema_user_id_users_id_fk": {
           "name": "user_github_schema_user_id_users_id_fk",
           "tableFrom": "user_github_schema",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.linkedin_jobs": {
+      "name": "linkedin_jobs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "linkedin_job_id": {
+          "name": "linkedin_job_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "job_info": {
+          "name": "job_info",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "linkedin_jobs_linkedin_job_id_unique": {
+          "name": "linkedin_jobs_linkedin_job_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "linkedin_job_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_saved_jobs": {
+      "name": "user_saved_jobs",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "linkedin_job_schema_id": {
+          "name": "linkedin_job_schema_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saved_at": {
+          "name": "saved_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_saved_jobs_user_id_users_id_fk": {
+          "name": "user_saved_jobs_user_id_users_id_fk",
+          "tableFrom": "user_saved_jobs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "user_saved_jobs_linkedin_job_schema_id_linkedin_jobs_id_fk": {
+          "name": "user_saved_jobs_linkedin_job_schema_id_linkedin_jobs_id_fk",
+          "tableFrom": "user_saved_jobs",
+          "tableTo": "linkedin_jobs",
+          "columnsFrom": [
+            "linkedin_job_schema_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_saved_jobs_user_id_linkedin_job_schema_id_pk": {
+          "name": "user_saved_jobs_user_id_linkedin_job_schema_id_pk",
+          "columns": [
+            "user_id",
+            "linkedin_job_schema_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_leetcode_schema": {
+      "name": "user_leetcode_schema",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "leetcode_username": {
+          "name": "leetcode_username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_solved": {
+          "name": "total_solved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_questions": {
+          "name": "total_questions",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "easy_solved": {
+          "name": "easy_solved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medium_solved": {
+          "name": "medium_solved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hard_solved": {
+          "name": "hard_solved",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acceptance_rate": {
+          "name": "acceptance_rate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ranking": {
+          "name": "ranking",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_leetcode_schema_user_id_users_id_fk": {
+          "name": "user_leetcode_schema_user_id_users_id_fk",
+          "tableFrom": "user_leetcode_schema",
           "tableTo": "users",
           "columnsFrom": [
             "user_id"

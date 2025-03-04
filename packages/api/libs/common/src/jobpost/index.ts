@@ -1,10 +1,8 @@
 export {
-  userJobPosts,
-  JobPostRelations,
-  JobPostSchema,
-  UserJobPostRelations,
-  JobPost,
-  NewJobPost,
-  UserJobPost,
-  NewUserJobPost,
+  linkedinJobs,
+  userJobPostRelation,
+  LinkedinJob,
+  NewLinkedinJob,
+  userFetchedJobs,
+  userFetchedJobsRelation,
 } from './jobpost.schema';

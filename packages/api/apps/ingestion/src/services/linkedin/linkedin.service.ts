@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { AxiosError } from 'axios';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE } from '@app/common';
-import { JobPostSchema, userJobPosts } from '@app/common/jobpost';
+import { linkedinJobs, userFetchedJobs } from '@app/common/jobpost';
 
 @Injectable()
 export class LinkedinService {
@@ -61,7 +61,7 @@ export class LinkedinService {
       }
 
       const jobContent = resp.data.md as string;
-      await this.storeJobPost(parseInt(jobId), jobContent, userId);
+      await this.storeJobPost(jobId, jobContent, userId);
 
       return jobContent;
     } catch (err) {
@@ -77,39 +77,55 @@ export class LinkedinService {
   }
 
   private async storeJobPost(
-    jobId: number,
-    jobPostInfo: string,
+    linkedinJobId: string,
+    jobInfo: string,
     userId: string,
   ): Promise<void> {
     try {
+      this.logger.log(
+        `Starting transaction to store job ID: ${linkedinJobId} for user: ${userId}`,
+      );
+
       await this.drizzle.transaction(async (tx) => {
+        this.logger.log(`Inserting job into linkedinJobs table...`);
+
         const [jobPost] = await tx
-          .insert(JobPostSchema)
+          .insert(linkedinJobs)
           .values({
-            jobId,
-            jobPostInfo,
+            linkedinJobId,
+            jobInfo,
           })
           .onConflictDoUpdate({
-            target: JobPostSchema.jobId,
+            target: linkedinJobs.linkedinJobId,
             set: {
-              jobPostInfo,
+              jobInfo,
             },
           })
           .returning();
 
+        this.logger.log(
+          `Job inserted/updated successfully with ID: ${jobPost.id}`,
+        );
+
+        this.logger.log(`Creating user-job relationship...`);
         await tx
-          .insert(userJobPosts)
+          .insert(userFetchedJobs)
           .values({
             userId,
-            jobPostId: jobPost.id,
+            linkedinJobSchemaId: jobPost.id,
           })
           .onConflictDoNothing({
-            target: [userJobPosts.userId, userJobPosts.jobPostId],
+            target: [
+              userFetchedJobs.userId,
+              userFetchedJobs.linkedinJobSchemaId,
+            ],
           });
+
+        this.logger.log(`User-job relationship created or already exists`);
       });
 
       this.logger.log(
-        `Job post stored successfully for jobId: ${jobId}, userId: ${userId}`,
+        `Transaction completed: Job post stored successfully for jobId: ${linkedinJobId}, userId: ${userId}`,
       );
     } catch (error) {
       this.logger.error(
