@@ -28,9 +28,9 @@ export class GithubService {
       );
 
       // Process and store repository data with additional information
-      await this.processAndStoreRepositories(pinnedRepos);
+      const data = await this.processAndStoreRepositories(pinnedRepos, userId);
 
-      return pinnedRepos;
+      return data;
     } catch (error) {
       this.logger.error(`Failed to process GitHub repo data: ${error.message}`);
       throw error;
@@ -49,7 +49,6 @@ export class GithubService {
     const userGithub = userGithubResults[0];
 
     if (!userGithub) {
-      this.logger.error(`GitHub information not found for user ${userId}`);
       throw new Error(`GitHub information not found for user ${userId}`);
     }
 
@@ -114,13 +113,23 @@ export class GithubService {
 
   private async processAndStoreRepositories(
     repos: TopRepository[],
-  ): Promise<void> {
+    userId: string,
+  ): Promise<any[]> {
+    const results = [];
+
+    this.logger.log(
+      `Processing ${repos.length} repositories for user ${userId}`,
+    );
+
+    // Process each repository sequentially to avoid overwhelming APIs
     for (const repo of repos) {
       try {
         // extract username and repo name from URL
-        const [username, repoName] = repo.url.split('/').slice(-2);
+        const urlParts = repo.url.split('/');
+        const username = urlParts[urlParts.length - 2];
+        const repoName = urlParts[urlParts.length - 1];
 
-        // Fetch additional data for repository
+        // Fetch rest of the data for repository
         const languages = await this.fetchLanguages(username, repoName);
         const readme = await this.fetchReadme(username, repoName);
 
@@ -136,18 +145,30 @@ export class GithubService {
           ),
           languages: JSON.stringify(languages || {}),
           readme: readme || 'No readme.md exists',
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          userId: userId,
         };
 
-        // Store
-        await this.drizzle.insert(userPinnedRepo).values(repoData);
+        // Insert repo and collect the result
+        const insertResult = await this.drizzle
+          .insert(userPinnedRepo)
+          .values(repoData)
+          .returning();
+
+        // Add to results array
+        if (insertResult && insertResult.length > 0) {
+          results.push(insertResult[0]);
+        }
       } catch (error) {
         this.logger.error(
           `Error processing repo ${repo.name}: ${error.message}`,
         );
       }
     }
+
+    this.logger.log(
+      `Successfully processed ${results.length} out of ${repos.length} repositories`,
+    );
+    return results;
   }
 
   private async fetchLanguages(
