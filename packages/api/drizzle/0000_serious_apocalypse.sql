@@ -1,3 +1,19 @@
+CREATE TABLE "user_pinned_repo" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" text NOT NULL,
+	"url" text NOT NULL,
+	"description" text DEFAULT 'No description' NOT NULL,
+	"stargazer_count" integer DEFAULT 0 NOT NULL,
+	"fork_count" integer DEFAULT 0 NOT NULL,
+	"user_id" uuid,
+	"primary_language" text DEFAULT 'Unknown' NOT NULL,
+	"repository_topics" jsonb DEFAULT '[]' NOT NULL,
+	"languages" jsonb DEFAULT '[]' NOT NULL,
+	"readme" text DEFAULT 'No readme.md exists' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "user_github_schema" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -51,6 +67,7 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_refresh_token_unique" UNIQUE("refresh_token")
 );
 --> statement-breakpoint
+ALTER TABLE "user_pinned_repo" ADD CONSTRAINT "user_pinned_repo_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_github_schema" ADD CONSTRAINT "user_github_schema_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_saved_jobs" ADD CONSTRAINT "user_saved_jobs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_saved_jobs" ADD CONSTRAINT "user_saved_jobs_linkedin_job_schema_id_linkedin_jobs_id_fk" FOREIGN KEY ("linkedin_job_schema_id") REFERENCES "public"."linkedin_jobs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

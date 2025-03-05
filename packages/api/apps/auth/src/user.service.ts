@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
-import { DRIZZLE } from '@app/common/drizzle/drizzle.module';
+import { DRIZZLE_PROVIDER } from '@app/common/drizzle/drizzle.module';
 import { users, User, NewUser } from '@app/common/user/user.schema';
 import {
   userGithubSchema,
@@ -18,7 +18,7 @@ type UserWithGithub = {
 @Injectable()
 export class UserService {
   constructor(
-    @Inject(DRIZZLE)
+    @Inject(DRIZZLE_PROVIDER)
     private readonly db: NodePgDatabase,
   ) {}
 

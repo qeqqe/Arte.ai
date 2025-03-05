@@ -10,7 +10,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ParsedResumeResponse } from '../../types/resume.types';
 import { promiseRetry } from '../../utils/promise-retry';
-import { DRIZZLE } from '@app/common';
+import { DRIZZLE_PROVIDER } from '@app/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { users } from '@app/common/user/user.schema';
 import { eq } from 'drizzle-orm';
@@ -21,7 +21,7 @@ export class ResumeService {
     private readonly logger: Logger,
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-    @Inject(DRIZZLE)
+    @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase,
   ) {}
 
