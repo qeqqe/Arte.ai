@@ -68,6 +68,40 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
+  analysis:
+    build:
+      context: ./packages/api
+      dockerfile: apps/analysis/Dockerfile
+      target: development
+    command: sh -c '/wait-for.sh rabbitmq 5672 -- pnpm run start:dev analysis'
+    env_file:
+      - ./packages/api/apps/analysis/.env
+    ports:
+      - '3003:3003'
+    volumes:
+      - /app/node_modules/
+      - /app/apps/analysis/node_modules/
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/api
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - dist/
+        - action: rebuild
+          path: package.json
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   client:
     build:

@@ -31,7 +31,7 @@ RUN pnpm install --prod
 
 COPY . .
 
-RUN pnpm run build auth
+RUN pnpm run build ingestion
 
 EXPOSE 3001
 

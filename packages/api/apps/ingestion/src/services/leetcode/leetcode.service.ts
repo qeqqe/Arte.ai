@@ -38,7 +38,6 @@ export class LeetcodeService {
     }
 
     const leetcodeUrl = this.configService.get<string>('LEETCODE_FETCH_URL');
-    this.logger.log(`Using LeetCode API URL: ${leetcodeUrl}`);
 
     if (!leetcodeUrl) {
       this.logger.error('LEETCODE_FETCH_URL environment variable is not set');
