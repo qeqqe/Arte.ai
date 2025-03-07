@@ -1,12 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { IngestionModule } from './ingestion.module';
+import { AnalysisModule } from './analysis.module';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(IngestionModule, {
+  const app = await NestFactory.create(AnalysisModule, {
     bufferLogs: true,
     cors: true,
   });
@@ -57,7 +57,7 @@ async function bootstrap() {
   await app.listen(port);
 
   const logger = app.get(Logger);
-  logger.log(`Ingestion service running on port ${port}`);
+  logger.log(`Analysis service running on port ${port}`);
 }
 
 bootstrap();
