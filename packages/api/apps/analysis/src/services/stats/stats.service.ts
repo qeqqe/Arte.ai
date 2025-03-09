@@ -1,4 +1,4 @@
-import { DRIZZLE_PROVIDER, UserLeetcodeSchema } from '@app/common';
+import { DRIZZLE_PROVIDER, UserLeetcodeSchema, users } from '@app/common';
 import { userPinnedRepo } from '@app/common/github';
 import { UserStatResponse } from '@app/dtos/analysis';
 import { HttpService } from '@nestjs/axios';
@@ -8,7 +8,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Logger } from 'nestjs-pino';
 
 @Injectable()
-export class GetStatService {
+export class StatsService {
   constructor(
     private readonly logger: Logger,
     private readonly httpService: HttpService,
@@ -30,16 +30,18 @@ export class GetStatService {
         .from(userPinnedRepo)
         .where(eq(userPinnedRepo.userId, userId));
 
-      this.logger.log(
-        `Found ${leetcodeStatResult.length} LeetCode stats and ${userPinnedRepoResults.length} pinned repos for user ${userId}`,
-      );
+      const fetchResume = await this.drizzle
+        .select()
+        .from(users)
+        .where(eq(users.id, userId));
 
       const leetcodestat = leetcodeStatResult[0];
+
+      const resume: string = fetchResume[0].resume;
 
       const response: UserStatResponse = {
         leetCodeStat: leetcodestat
           ? {
-              id: leetcodestat.id,
               leetcodeUsername: leetcodestat.leetcodeUsername,
               totalSolved: leetcodestat.totalSolved,
               totalQuestions: leetcodestat.totalQuestions,
@@ -48,14 +50,11 @@ export class GetStatService {
               hardSolved: leetcodestat.hardSolved,
               acceptanceRate: leetcodestat.acceptanceRate,
               ranking: leetcodestat.ranking,
-              createdAt: leetcodestat.createdAt,
-              updatedAt: leetcodestat.updatedAt,
             }
           : undefined,
         userGithubRepos:
           userPinnedRepoResults.length > 0
             ? userPinnedRepoResults.map((repo) => ({
-                id: repo.id,
                 name: repo.name,
                 url: repo.url,
                 description: repo.description,
@@ -65,10 +64,9 @@ export class GetStatService {
                 repositoryTopics: repo.repositoryTopics,
                 languages: repo.languages,
                 readme: repo.readme,
-                createdAt: repo.createdAt,
-                updatedAt: repo.updatedAt,
               }))
             : [],
+        resume,
       };
 
       if (!leetcodestat && userPinnedRepoResults.length === 0) {

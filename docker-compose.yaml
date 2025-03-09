@@ -68,7 +68,8 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
-  analysis:
+
+  stat-analysis:
     build:
       context: ./packages/api
       dockerfile: apps/analysis/Dockerfile
@@ -97,6 +98,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
     environment:
       - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
     dns:
@@ -162,6 +164,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
+    container_name: rabbitmq
+    restart: always
     ports:
       - '5672:5672' # AMQP port
       - '15672:15672' # Management UI port
@@ -170,10 +174,10 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
     healthcheck:
       test: ['CMD', 'rabbitmq-diagnostics', 'check_port_connectivity']
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 30s
     networks:
       - app-network
     volumes:
