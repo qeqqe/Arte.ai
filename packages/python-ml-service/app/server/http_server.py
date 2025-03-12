@@ -36,7 +36,6 @@ def create_app() -> FastAPI:
 
     @app.get("/scrape-job")
     async def scrape_job(request: Request):
-        # Let's explicitly get the query parameters
         query_params = dict(request.query_params)
         logger.info(f"Received request with query params: {query_params}")
         
