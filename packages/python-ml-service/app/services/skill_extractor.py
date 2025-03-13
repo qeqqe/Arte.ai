@@ -3,6 +3,8 @@ import re
 import logging
 from collections import defaultdict
 from typing import Dict, List, Set, Union, Optional, Any
+from ..constants.skill_categories import get_skill_categories
+from ..constants.skill_alias import get_canonical_skill_name, build_alias_lookup, ALIAS_LOOKUP
 
 class SkillExtractor:
     
@@ -15,52 +17,9 @@ class SkillExtractor:
         """
         self.logger = logging.getLogger(__name__)
         
-        # Define common skills across different categories
-        self.skill_categories = {
-            # languages & scripting
-            "languages": [
-                "Python", "JavaScript", "TypeScript", "Java", "C#", "C++", "Go", "Rust", "Ruby",
-                "PHP", "Kotlin", "Swift", "Objective-C", "R", "MATLAB", "Bash", "PowerShell"
-            ],
-            # frontend frameworks & libraries
-            "frontend": [
-                "React", "Angular", "Vue", "Svelte", "Next.js", "Nuxt.js", "HTML", "CSS", "SCSS",
-                "Tailwind", "Bootstrap", "Material UI", "Ant Design"
-            ],
-            # backend frameworks & architectures
-            "backend": [
-                "Node.js", "Express", "NestJS", "Django", "Flask", "FastAPI", "Spring Boot",
-                "ASP.NET", "Ruby on Rails", "Laravel", "Phoenix", "Elixir"
-            ],
-            # databases & data stores
-            "databases": [
-                "PostgreSQL", "MySQL", "MongoDB", "Redis", "Elasticsearch", "SQLite", "Cassandra",
-                "Firebase", "Oracle", "Prisma", "Drizzle", "SQL", "NoSQL"
-            ],
-            # devOps & infrastructure
-            "devops": [
-                "Docker", "Kubernetes", "AWS", "Azure", "GCP", "CI/CD", "GitHub Actions", "Jenkins",
-                "Travis CI", "CircleCI", "Terraform", "Ansible"
-            ],
-            # AI, machine learning & data processing
-            "ai_ml": [
-                "TensorFlow", "PyTorch", "scikit-learn", "Keras", "NLTK", "SpaCy", "Machine Learning",
-                "Deep Learning", "Pandas", "NumPy"
-            ],
-            # mobile development frameworks
-            "mobile": [
-                "React Native", "Flutter", "Swift", "Kotlin", "Objective-C", "Xamarin", "Ionic", "Lynx"
-            ],
-            # testing & quality assurance
-            "testing": [
-                "Jest", "Mocha", "Chai", "Selenium", "Cypress", "JUnit", "pytest", "RSpec"
-            ],
-            # additional skills & architectural patterns
-            "others": [
-                "GraphQL", "RESTful APIs", "gRPC", "Microservices", "WebSockets", "Agile",
-                "Scrum", "TDD", "BDD", "UX/UI Design", "DevSecOps"
-            ]
-        }
+        # Get common skills and aliases
+        self.skill_categories = get_skill_categories()
+        self.alias_lookup = ALIAS_LOOKUP  # Use pre-built lookup table for performance
         
         # Process user stats if provided
         if user_stats:
@@ -75,12 +34,31 @@ class SkillExtractor:
         else:
             self.user_stats = {}
             
-        # Compile regex patterns for skill detection
+        # Compile regex patterns for skill detection - using the canonical names
         self.category_patterns = {}
+        self.all_skills_pattern = self._build_all_skills_pattern()
+        
         for category, skills in self.skill_categories.items():
             # Create regex patterns that match whole words only
             patterns = [r'\b' + re.escape(skill) + r'\b' for skill in skills]
             self.category_patterns[category] = re.compile('|'.join(patterns), re.IGNORECASE)
+    
+    def _build_all_skills_pattern(self):
+        """
+        Build a regex pattern that matches any skill from any category.
+        This is more efficient than checking each category separately.
+        """
+        all_skills = set()
+        for skills in self.skill_categories.values():
+            all_skills.update([skill.lower() for skill in skills])
+            
+        # Also add key aliases that might be important to catch
+        for canonical, aliases in self.alias_lookup.items():
+            all_skills.add(canonical.lower())
+            
+        # Create the pattern with word boundaries
+        patterns = [r'\b' + re.escape(skill) + r'\b' for skill in all_skills]
+        return re.compile('|'.join(patterns), re.IGNORECASE)
     
     def extract_skills_from_text(self, text: str, threshold: float = 0.0) -> Dict[str, List[str]]:
         """
@@ -94,19 +72,30 @@ class SkillExtractor:
             Dictionary of categorized skills
         """
         try:
+            if not text:
+                return {}
+                
             found_skills = defaultdict(set)
             
-            # Process text against all category patterns
-            for category, pattern in self.category_patterns.items():
-                matches = pattern.findall(text)
-                for match in matches:
-                    skill_name = match.lower()
-                    # Apply a simple confidence measure - could be improved in production
-                    confidence = len(skill_name) / 20  # Example: longer skill names get higher confidence
-                    if confidence >= threshold:
-                        found_skills[category].add(skill_name)
+            # First pass: use the combined pattern to find all potential skills
+            matches = self.all_skills_pattern.findall(text)
             
-            # Convert sets to lists for JSON serialization
+            # Process each match
+            for match in matches:
+                # Get canonical name for the skill
+                canonical_skill = get_canonical_skill_name(match)
+                
+                # Simple confidence scoring - could be enhanced with ML/NLP in production
+                confidence = min(1.0, (len(canonical_skill) / 10) + 0.2)  # Base confidence on length with a minimum
+                
+                # Skip if below threshold
+                if confidence < threshold:
+                    continue
+                    
+                # Find which category this skill belongs to
+                self._categorize_skill(canonical_skill, found_skills)
+            
+            # Convert sets to lists for JSON serialization and sort alphabetically
             return {category: sorted(list(skills)) for category, skills in found_skills.items()}
         
         except Exception as e:
@@ -127,24 +116,35 @@ class SkillExtractor:
             for repo in self.user_stats.get("userGithubRepos", []):
                 # Extract from languages
                 for lang in repo.get("languages", {}):
-                    self._categorize_skill(lang.lower(), found_skills)
+                    canonical_lang = get_canonical_skill_name(lang)
+                    self._categorize_skill(canonical_lang, found_skills)
 
                 # Extract from repository topics
                 for topic in repo.get("repositoryTopics", []):
-                    # Handle hyphenated topics
-                    for subtopic in topic.split('-'):
-                        self._categorize_skill(subtopic.lower(), found_skills)
+                    # Handle hyphenated topics and other separators
+                    for separator in ['-', '_', ' ', '.']:
+                        if separator in topic:
+                            for subtopic in topic.split(separator):
+                                if len(subtopic) > 2:  # Skip very short fragments
+                                    canonical_topic = get_canonical_skill_name(subtopic)
+                                    self._categorize_skill(canonical_topic, found_skills)
+                    
+                    # Also check the topic as a whole
+                    canonical_topic = get_canonical_skill_name(topic)
+                    self._categorize_skill(canonical_topic, found_skills)
                 
                 # Extract from description
                 if repo.get("description"):
-                    for category, pattern in self.category_patterns.items():
-                        matches = pattern.findall(repo["description"].lower())
-                        for match in matches:
-                            self._categorize_skill(match.lower(), found_skills)
+                    # Use the all skills pattern for efficiency
+                    matches = self.all_skills_pattern.findall(repo["description"])
+                    for match in matches:
+                        canonical_skill = get_canonical_skill_name(match)
+                        self._categorize_skill(canonical_skill, found_skills)
                             
                 # Extract from primary language
                 if repo.get("primaryLanguage"):
-                    self._categorize_skill(repo["primaryLanguage"].lower(), found_skills)
+                    canonical_lang = get_canonical_skill_name(repo["primaryLanguage"])
+                    self._categorize_skill(canonical_lang, found_skills)
             
             # Convert sets to lists for JSON serialization
             return {category: sorted(list(skills)) for category, skills in found_skills.items()}
@@ -165,19 +165,96 @@ class SkillExtractor:
             return
             
         skill = skill.lower()
+        canonical_skill = get_canonical_skill_name(skill)
         categorized = False
 
-        # Special case handling
-        if skill in ["scss", "css", "html"]:
-            found_skills["frontend"].add(skill)
+        # Check each category to see if the skill belongs there
+        for category, skills_list in self.skill_categories.items():
+            skills_lower = [s.lower() for s in skills_list]
+            if canonical_skill.lower() in skills_lower:
+                found_skills[category].add(canonical_skill)
+                categorized = True
+                break
+        
+        # Special case handling for skills that might appear in multiple categories
+        if canonical_skill in ["kotlin", "swift"]:
+            # These are both languages and used in mobile development
+            found_skills["languages"].add(canonical_skill)
+            found_skills["mobile"].add(canonical_skill)
             categorized = True
         
-        # Normal categorization
-        for category, skills in self.skill_categories.items():
-            if skill in [s.lower() for s in skills]:
-                found_skills[category].add(skill)
+        elif canonical_skill in ["rust"]:
+            # Rust is both a language and used in blockchain (for Solana)
+            if "blockchain" in self.skill_categories:
+                found_skills["languages"].add(canonical_skill)
+                found_skills["blockchain"].add(canonical_skill)
                 categorized = True
                 
+        elif canonical_skill in ["tensorflow", "pytorch"]:
+            # AI libraries that have mobile versions
+            found_skills["ai_ml"].add(canonical_skill)
+            found_skills["mobile"].add(canonical_skill + " mobile")
+            categorized = True
+                
+        # If the skill doesn't match any category, add it to 'others'
         if not categorized:
-            # If the skill doesn't match any category, add it to 'others'
-            found_skills["others"].add(skill)
+            found_skills["others"].add(canonical_skill)
+    
+    def get_skill_categories_for_skill(self, skill: str) -> List[str]:
+        """
+        Get all categories that a given skill belongs to.
+        
+        Args:
+            skill: The skill name to find categories for
+            
+        Returns:
+            List of category names where the skill is found
+        """
+        if not skill:
+            return []
+            
+        canonical_skill = get_canonical_skill_name(skill)
+        categories = []
+        
+        for category, skills_list in self.skill_categories.items():
+            if canonical_skill.lower() in [s.lower() for s in skills_list]:
+                categories.append(category)
+                
+        return categories
+    
+    def merge_skill_results(self, *skill_dicts) -> Dict[str, List[str]]:
+        """
+        Merge multiple skill dictionaries into one.
+        
+        Args:
+            *skill_dicts: Dictionaries of categorized skills
+            
+        Returns:
+            Combined dictionary of categorized skills with duplicates removed
+        """
+        merged = defaultdict(set)
+        
+        for skill_dict in skill_dicts:
+            for category, skills in skill_dict.items():
+                merged[category].update(skills)
+        
+        # Convert sets to sorted lists
+        return {category: sorted(list(skills)) for category, skills in merged.items()}
+    
+    def analyze_github_and_text(self, text: str = None) -> Dict[str, List[str]]:
+        """
+        Perform a comprehensive skill analysis by combining GitHub and text extraction.
+        
+        Args:
+            text: Optional additional text to analyze
+            
+        Returns:
+            Combined dictionary of categorized skills
+        """
+        github_skills = self.extract_skills_from_github()
+        
+        if text:
+            text_skills = self.extract_skills_from_text(text)
+            return self.merge_skill_results(github_skills, text_skills)
+        else:
+            return github_skills
