@@ -2,7 +2,7 @@ import json
 import re
 import logging
 from collections import defaultdict
-from typing import Dict, List, Set, Union, Optional, Any
+from typing import Dict, List, Set
 from ..constants.skill_categories import get_skill_categories
 from ..constants.skill_alias import get_canonical_skill_name, build_alias_lookup, ALIAS_LOOKUP
 
@@ -17,9 +17,9 @@ class SkillExtractor:
         """
         self.logger = logging.getLogger(__name__)
         
-        # Get common skills and aliases
+        # common skills and aliases
         self.skill_categories = get_skill_categories()
-        self.alias_lookup = ALIAS_LOOKUP  # Use pre-built lookup table for performance
+        self.alias_lookup = ALIAS_LOOKUP  # pre built lookup table for performance
         
         # Process user stats if provided
         if user_stats:
@@ -34,7 +34,7 @@ class SkillExtractor:
         else:
             self.user_stats = {}
             
-        # Compile regex patterns for skill detection - using the canonical names
+        # Compile regex patterns for skill detection using the canonical names
         self.category_patterns = {}
         self.all_skills_pattern = self._build_all_skills_pattern()
         

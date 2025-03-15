@@ -1,5 +1,5 @@
 {
-  "id": "61cf32dc-b012-47b5-b0d6-9422efd84afa",
+  "id": "ffb48caa-1689-44a9-9d82-8e0c7aa65297",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -227,6 +227,13 @@
           "notNull": true,
           "default": "now()"
         },
+        "processed_skills": {
+          "name": "processed_skills",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"message\": \"no data\"}'"
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
@@ -239,6 +246,13 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
+        "linkedin_jobs_id_unique": {
+          "name": "linkedin_jobs_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        },
         "linkedin_jobs_linkedin_job_id_unique": {
           "name": "linkedin_jobs_linkedin_job_id_unique",
           "nullsNotDistinct": false,

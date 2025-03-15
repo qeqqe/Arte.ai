@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..services.pdf_service import PDFService
 from ..services.skill_extractor import SkillExtractor
 from ..services.job_scraper import JobScraper
+from ..services.job_skill_extractor import JobPostingExtractor
 import logging
 import json
 
@@ -11,6 +12,7 @@ def create_app() -> FastAPI:
     pdf_service = PDFService()
     job_scraper = JobScraper()
     skill_extractor = SkillExtractor()
+    job_extractor = JobPostingExtractor()  # Add the job extractor
     logger = logging.getLogger(__name__)
     
     app.add_middleware(
@@ -100,5 +102,28 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}", exc_info=True)
             raise HTTPException(500, f"Internal server error: {str(e)}")
+
+    @app.post("/extract-job-skill")
+    async def extract_job_skill(request: Request):
+        """
+        For extracting structured information and skills from job posting.
+        """
+        try:
+            data = await request.json()
+            job_text = data.get("text")
+            
+            if not job_text:
+                raise HTTPException(400, "Job text is required")
+            
+            # process the job desc directly
+            job_info = job_extractor.extract_job_info(str(job_text))
+            
+            skills_count = sum(len(skills) for category, skills in 
+                            job_info.get("skills_categorized", {}).items())
+            return job_info
+        except json.JSONDecodeError:
+            raise HTTPException(400, "Invalid JSON in request body")
+        except Exception as e:
+            raise HTTPException(500, f"Failed to extract job skills: {str(e)}")
 
     return app

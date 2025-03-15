@@ -5,11 +5,11 @@ import {
   UseGuards,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { Get } from '@nestjs/common';
 import { StatsService } from '../../services/stats/stats.service';
 import { Logger } from 'nestjs-pino';
-
 @Controller('stats')
 export class StatsController {
   constructor(
@@ -19,11 +19,11 @@ export class StatsController {
 
   @Get('user')
   @UseGuards(JwtAuthGuard)
-  async getStat(@Req() request: Request) {
+  async getUserSkillInfo(@Req() request: Request) {
     try {
       const user = request['user'] as UserPayload;
       this.logger.log(`Processing stats request for user: ${user.id}`);
-      return await this.statsService.getUserStat(user.id);
+      return await this.statsService.getUserSkillInfo(user.id);
     } catch (error) {
       this.logger.error(
         `Error in stats controller: ${error.message}`,
@@ -37,5 +37,12 @@ export class StatsController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Get('extract-job-skill')
+  @UseGuards(JwtAuthGuard)
+  async getJobPostInfo(@Req() request: Request, @Query('jobId') JobId: string) {
+    const user = request['user'] as UserPayload;
+    return this.statsService.getJobPostInfo(user.id, JobId);
   }
 }

@@ -1,5 +1,6 @@
 import { DRIZZLE_PROVIDER, UserLeetcodeSchema, users } from '@app/common';
 import { userPinnedRepo } from '@app/common/github';
+import { linkedinJobs } from '@app/common/jobpost';
 import { UserStatResponse } from '@app/dtos/analysis';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
@@ -18,7 +19,7 @@ export class StatsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getUserStat(userId: string): Promise<any> {
+  async getUserSkillInfo(userId: string): Promise<any> {
     try {
       this.logger.log(`Fetching stats for user: ${userId}`);
 
@@ -98,9 +99,6 @@ export class StatsService {
       try {
         const pythonServiceUrl =
           this.configService.getOrThrow<string>('PYTHON_URL');
-        this.logger.log(
-          `Sending GitHub repos to Python service at ${pythonServiceUrl}`,
-        );
 
         const processedResponse = await this.httpService.axiosRef.post(
           `${pythonServiceUrl}/extract-skills`,
@@ -116,6 +114,47 @@ export class StatsService {
         );
         return { skills: {}, error: error.message };
       }
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch user data: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+
+  async getJobPostInfo(
+    userId: string,
+    JobId: string,
+  ): Promise<JSON | typeof Error> {
+    try {
+      const FetchedlinkedInJob = await this.drizzle
+        .select({
+          id: linkedinJobs.id,
+          linkedinJobId: linkedinJobs.linkedinJobId,
+          jobInfo: linkedinJobs.jobInfo,
+        })
+        .from(linkedinJobs)
+        .where(eq(linkedinJobs.id, JobId));
+
+      if (!FetchedlinkedInJob.length) {
+        this.logger.error(`Job with ID ${JobId} not found`);
+        throw new Error(`Job with ID ${JobId} not found`);
+      }
+
+      const linkedInJob = FetchedlinkedInJob[0];
+      this.logger.log(`Started processing for the jobId ${JobId}`);
+
+      const pythonServiceUrl =
+        this.configService.getOrThrow<string>('PYTHON_URL');
+
+      const processedJobPostingResponse = await this.httpService.axiosRef.post(
+        `${pythonServiceUrl}/extract-job-skill`,
+        { text: linkedInJob.jobInfo },
+      );
+
+      this.logger.log(`Received data from Python service`);
+      return processedJobPostingResponse.data;
     } catch (error) {
       this.logger.error(
         `Failed to fetch user data: ${error.message}`,
