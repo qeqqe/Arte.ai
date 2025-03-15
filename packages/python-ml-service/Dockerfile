@@ -21,16 +21,16 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and its dependencies
-RUN playwright install-deps
-RUN playwright install chromium
+# no need for this
+# RUN playwright install-deps
+# RUN playwright install chromium
 
 # Don't copy application code in development
 # It will be mounted as a volume
 
 EXPOSE 5000
 
-CMD ["uvicorn", "app.main:create_app", "--reload", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["uvicorn", "app.main:get_app", "--reload", "--host", "0.0.0.0", "--port", "5000"]
 
 FROM python:3.11-slim AS production
 

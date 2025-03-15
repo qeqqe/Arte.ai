@@ -8,8 +8,11 @@ logger = structlog.get_logger()
 
 HTTP_PORT = int(os.getenv("HTTP_PORT", "5000"))
 
+def get_app():
+    return create_app()
+
 async def start_server():
-    app = create_app()
+    app = get_app()
     config = uvicorn.Config(
         app,
         host="0.0.0.0",

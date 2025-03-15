@@ -2,11 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 import { AuthModule, DrizzleModule, LoggerModule } from '@app/common';
-import { GetStatController } from './controllers/get-stat/get-stat.controller';
-import { GetStatService } from './services/get-stat/get-stat.service';
 import { HttpModule } from '@nestjs/axios';
 import { RmqModule } from '@app/common/rmq/rmq.module';
-
+import { StatsService } from './services/stats/stats.service';
+import { StatsController } from './controller/stats/stats.controller';
 @Module({
   imports: [
     LoggerModule,
@@ -23,7 +22,7 @@ import { RmqModule } from '@app/common/rmq/rmq.module';
     }),
     RmqModule.register({ name: 'ANALYSIS_SERVICE' }),
   ],
-  controllers: [GetStatController],
-  providers: [GetStatService],
+  controllers: [StatsController],
+  providers: [StatsService],
 })
 export class AnalysisModule {}
