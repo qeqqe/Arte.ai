@@ -89,7 +89,7 @@ jobs:
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:3000
 
       - name: Run specific working tests
         working-directory: ./packages/api
@@ -105,7 +105,7 @@ jobs:
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:3000
           LEETCODE_FETCH_URL: http://localhost:5000/leetcode
 
       - name: Run all tests (informational)
@@ -123,5 +123,5 @@ jobs:
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:3000
           LEETCODE_FETCH_URL: http://localhost:5000/leetcode

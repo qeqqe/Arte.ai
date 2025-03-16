@@ -58,4 +58,4 @@ The project is organized into separate microservices:
    docker-compose up
    ```
 3. **Access the Application:**
-   navigate to `http://localhost:5173`.
+   navigate to `http://localhost:3000`.

@@ -63,11 +63,11 @@ describe('AuthController', () => {
             get: jest.fn().mockImplementation((key: string) => {
               const config = {
                 NODE_ENV: 'development',
-                FRONTEND_URL: 'http://localhost:5173',
+                FRONTEND_URL: 'http://localhost:3000',
               };
               return config[key];
             }),
-            getOrThrow: jest.fn().mockReturnValue('http://localhost:5173'),
+            getOrThrow: jest.fn().mockReturnValue('http://localhost:3000'),
           },
         },
         {
@@ -132,7 +132,7 @@ describe('AuthController', () => {
 
       // Verify redirect
       expect(mockResponse.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth-success',
+        'http://localhost:3000/auth-success',
       );
     });
 
