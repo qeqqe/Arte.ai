@@ -1,6 +1,6 @@
 import { DRIZZLE_PROVIDER, UserLeetcodeSchema, users } from '@app/common';
 import { userPinnedRepo } from '@app/common/github';
-import { linkedinJobs } from '@app/common/jobpost';
+import { linkedinJobs as LinkedInJobs } from '@app/common/jobpost';
 import { UserStatResponse } from '@app/dtos/analysis';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
@@ -123,19 +123,12 @@ export class StatsService {
     }
   }
 
-  async getJobPostInfo(
-    userId: string,
-    JobId: string,
-  ): Promise<JSON | typeof Error> {
+  async getJobPostInfo(JobId: string): Promise<JSON | typeof Error> {
     try {
       const FetchedlinkedInJob = await this.drizzle
-        .select({
-          id: linkedinJobs.id,
-          linkedinJobId: linkedinJobs.linkedinJobId,
-          jobInfo: linkedinJobs.jobInfo,
-        })
-        .from(linkedinJobs)
-        .where(eq(linkedinJobs.id, JobId));
+        .select()
+        .from(LinkedInJobs)
+        .where(eq(LinkedInJobs.id, JobId));
 
       if (!FetchedlinkedInJob.length) {
         this.logger.error(`Job with ID ${JobId} not found`);
@@ -143,7 +136,6 @@ export class StatsService {
       }
 
       const linkedInJob = FetchedlinkedInJob[0];
-      this.logger.log(`Started processing for the jobId ${JobId}`);
 
       const pythonServiceUrl =
         this.configService.getOrThrow<string>('PYTHON_URL');
@@ -154,6 +146,12 @@ export class StatsService {
       );
 
       this.logger.log(`Received data from Python service`);
+
+      await this.drizzle
+        .update(LinkedInJobs)
+        .set({ processedSkills: processedJobPostingResponse.data } as any)
+        .where(eq(LinkedInJobs.id, JobId));
+
       return processedJobPostingResponse.data;
     } catch (error) {
       this.logger.error(
