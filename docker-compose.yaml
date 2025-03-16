@@ -111,9 +111,11 @@ services:
       dockerfile: Dockerfile
       target: development
     ports:
-      - '5173:5173'
+      - '3000:3000'
     volumes:
+      - ./packages/client:/app
       - /app/node_modules/
+      - /app/.next/
     develop:
       watch:
         - action: sync
@@ -121,6 +123,7 @@ services:
           target: /app
           ignore:
             - node_modules/
+            - .next/
             - dist/
         - action: rebuild
           path: ./packages/client/package.json
@@ -128,6 +131,7 @@ services:
       - VITE_API_URL=http://localhost:3001
     networks:
       - app-network
+    restart: unless-stopped
 
   python-ml-service:
     build:

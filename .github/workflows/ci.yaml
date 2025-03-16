@@ -89,7 +89,7 @@ jobs:
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:3000
 
       - name: Run specific working tests
         working-directory: ./packages/api
@@ -105,7 +105,7 @@ jobs:
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:3000
           LEETCODE_FETCH_URL: http://localhost:5000/leetcode
 
       - name: Run all tests (informational)
@@ -123,5 +123,64 @@ jobs:
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
           GITHUB_CALLBACK_URL: http://localhost:3001/auth/github/callback
-          FRONTEND_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:3000
           LEETCODE_FETCH_URL: http://localhost:5000/leetcode
+
+  test-client:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup Next.js cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ${{ github.workspace }}/packages/client/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-
+
+      - name: Install dependencies
+        working-directory: ./packages/client
+        run: pnpm install --shamefully-hoist
+
+      - name: Type check
+        working-directory: ./packages/client
+        run: pnpm tsc --noEmit
+
+      - name: Lint
+        working-directory: ./packages/client
+        run: pnpm lint
+
+      - name: Build
+        working-directory: ./packages/client
+        run: pnpm build
+        env:
+          NODE_ENV: test
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          # Add any other environment variables needed for the build

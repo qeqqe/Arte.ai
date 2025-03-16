@@ -41,8 +41,7 @@ export class StatsController {
 
   @Get('extract-job-skill')
   @UseGuards(JwtAuthGuard)
-  async getJobPostInfo(@Req() request: Request, @Query('jobId') JobId: string) {
-    const user = request['user'] as UserPayload;
-    return this.statsService.getJobPostInfo(user.id, JobId);
+  async getJobPostInfo(@Query('jobId') JobId: string) {
+    return this.statsService.getJobPostInfo(JobId);
   }
 }
