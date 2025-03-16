@@ -30,7 +30,9 @@ CREATE TABLE "linkedin_jobs" (
 	"linkedin_job_id" text NOT NULL,
 	"job_info" text NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
+	"processed_skills" jsonb DEFAULT '{"message": "no data"}' NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "linkedin_jobs_id_unique" UNIQUE("id"),
 	CONSTRAINT "linkedin_jobs_linkedin_job_id_unique" UNIQUE("linkedin_job_id")
 );
 --> statement-breakpoint
