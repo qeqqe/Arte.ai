@@ -45,6 +45,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/ingestion/tsconfig.app.json"
       }
+    },
+    "analysis": {
+      "type": "application",
+      "root": "apps/analysis",
+      "entryFile": "main",
+      "sourceRoot": "apps/analysis/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/analysis/tsconfig.app.json"
+      }
     }
   }
 }

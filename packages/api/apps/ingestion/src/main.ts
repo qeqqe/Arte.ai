@@ -32,7 +32,6 @@ async function bootstrap() {
 
   const server = app.getHttpAdapter().getInstance();
 
-  console.log('\n\n=== REGISTERED ROUTES ===');
   if (server && server._router && server._router.stack) {
     const routes = server._router.stack
       .filter((layer) => layer.route)
@@ -53,7 +52,6 @@ async function bootstrap() {
       'Unable to retrieve routes - server structure is different than expected',
     );
   }
-  console.log('========================\n\n');
 
   const port = configService.get<number>('HTTP_PORT', 3002);
   await app.listen(port);

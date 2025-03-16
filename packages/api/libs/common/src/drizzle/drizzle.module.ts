@@ -2,17 +2,17 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as githubSchema from '@app/common/github';
-import * as userSchema from '@app/common/user';
-import * as leetcodeSchema from '@app/common/leetcode';
-import * as JobPostSchema from '@app/common/jobpost';
-export const DRIZZLE = Symbol('drizzle-connection');
+import * as githubSchema from '../github';
+import * as userSchema from '../user';
+import * as leetcodeSchema from '../leetcode';
+import * as JobPostSchema from '../jobpost';
+export const DRIZZLE_PROVIDER = Symbol('drizzle-connection');
 
 @Module({
   imports: [ConfigModule],
   providers: [
     {
-      provide: DRIZZLE,
+      provide: DRIZZLE_PROVIDER,
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
         const DATABASE_URL = config.getOrThrow<string>('DATABASE_URL');
@@ -32,6 +32,6 @@ export const DRIZZLE = Symbol('drizzle-connection');
       },
     },
   ],
-  exports: [DRIZZLE],
+  exports: [DRIZZLE_PROVIDER],
 })
 export class DrizzleModule {}

@@ -69,15 +69,53 @@ services:
       - 8.8.8.8
       - 8.8.4.4
 
+  stat-analysis:
+    build:
+      context: ./packages/api
+      dockerfile: apps/analysis/Dockerfile
+      target: development
+    command: sh -c '/wait-for.sh rabbitmq 5672 -- pnpm run start:dev analysis'
+    env_file:
+      - ./packages/api/apps/analysis/.env
+    ports:
+      - '3003:3003'
+    volumes:
+      - /app/node_modules/
+      - /app/apps/analysis/node_modules/
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/api
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - dist/
+        - action: rebuild
+          path: package.json
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
   client:
     build:
       context: ./packages/client
       dockerfile: Dockerfile
       target: development
     ports:
-      - '5173:5173'
+      - '3000:3000'
     volumes:
+      - ./packages/client:/app
       - /app/node_modules/
+      - /app/.next/
     develop:
       watch:
         - action: sync
@@ -85,6 +123,7 @@ services:
           target: /app
           ignore:
             - node_modules/
+            - .next/
             - dist/
         - action: rebuild
           path: ./packages/client/package.json
@@ -92,6 +131,7 @@ services:
       - VITE_API_URL=http://localhost:3001
     networks:
       - app-network
+    restart: unless-stopped
 
   python-ml-service:
     build:
@@ -128,6 +168,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     hostname: rabbitmq
+    container_name: rabbitmq
+    restart: always
     ports:
       - '5672:5672' # AMQP port
       - '15672:15672' # Management UI port
@@ -136,10 +178,10 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
     healthcheck:
       test: ['CMD', 'rabbitmq-diagnostics', 'check_port_connectivity']
-      interval: 5s
+      interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 10
+      start_period: 30s
     networks:
       - app-network
     volumes:
