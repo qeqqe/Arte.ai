@@ -9,16 +9,20 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@remixicon/react": "^4.6.0",
+    "classnames": "^2.5.1",
     "@tanstack/react-query": "^5.68.0",
     "@tanstack/react-query-devtools": "^5.68.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.5.0",
     "lucide-react": "^0.482.0",
     "next": "15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "use-context-selector": "^2.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

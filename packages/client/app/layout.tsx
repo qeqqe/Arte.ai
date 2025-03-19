@@ -1,4 +1,4 @@
-import TanStackProvider from '@/providers/tanstack-provider';
+import TanStackProvider from '../providers/tanstack-provider';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -10,7 +10,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <TanStackProvider>{children}</TanStackProvider>
       </body>
