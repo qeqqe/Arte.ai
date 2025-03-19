@@ -80,6 +80,8 @@ def create_app() -> FastAPI:
                         
                         extractor = SkillExtractor(user_stats={"userGithubRepos": parsed_data})
                         skills = extractor.extract_skills_from_github()
+                        leetcode_extractor = SkillExtractor(user_stats={"leetCodeStat": parsed_data})
+                        leetcode_skills = leetcode_extractor.extract_skills_from_github()
                         
                         logger.info(f"Extracted {sum(len(skills_list) for category, skills_list in skills.items())} skills from GitHub repos")
                         return {"skills": skills}

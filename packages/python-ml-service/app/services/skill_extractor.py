@@ -59,6 +59,105 @@ class SkillExtractor:
         # Create the pattern with word boundaries
         patterns = [r'\b' + re.escape(skill) + r'\b' for skill in all_skills]
         return re.compile('|'.join(patterns), re.IGNORECASE)
+  
+    # leetCodeStat: leetcodestat
+    #       ? {
+    #           leetcodeUsername: leetcodestat.leetcodeUsername,
+    #           totalSolved: leetcodestat.totalSolved,
+    #           totalQuestions: leetcodestat.totalQuestions,
+    #           easySolved: leetcodestat.easySolved,
+    #           mediumSolved: leetcodestat.mediumSolved,
+    #           hardSolved: leetcodestat.hardSolved,
+    #           acceptanceRate: leetcodestat.acceptanceRate,
+    #           ranking: leetcodestat.ranking,
+    #         }
+    #       : undefined,
+  
+    def extract_pss_from_leetcode(self) -> Dict[str, any]:
+        """
+        Extract problem-solving skills from user's LeetCode statistics.
+        
+        Returns:
+            A dictionary containing a numerical rating (0-100) and a qualitative assessment
+            of the user's problem-solving skills based on LeetCode performance.
+        """
+        try:
+            leetcode_stats = self.user_stats.get("leetCodeStat", {})
+            if not leetcode_stats:
+                return {}
+                
+            # extract relevant fields
+            total_solved = leetcode_stats.get("totalSolved", 0)
+            total_questions = leetcode_stats.get("totalQuestions", 0)
+            easy_solved = leetcode_stats.get("easySolved", 0)
+            medium_solved = leetcode_stats.get("mediumSolved", 0)
+            hard_solved = leetcode_stats.get("hardSolved", 0)
+            acceptance_rate = leetcode_stats.get("acceptanceRate", 0) / 100   
+            ranking = leetcode_stats.get("ranking", 0)
+            
+            # handle edge cases to avoid division by 0
+            if total_questions == 0 or ranking == 0:
+                return {"rating": 0, "level": "Unknown", "details": leetcode_stats}
+            
+            # component 1: problem difficulty score (0-50 points)
+            # weight problems by difficulty: easy=1, medium=2, hard=4
+            weighted_solved = (easy_solved * 1) + (medium_solved * 2) + (hard_solved * 4)
+            max_possible_weighted = total_questions * 2  # assuming average difficulty is medium
+            difficulty_score = min(50, (weighted_solved / max_possible_weighted) * 50)
+            
+            # component 2: problem-solving breadth (0-20 points)
+            # measure how many problems they've solved relative to the total
+            breadth_score = min(20, (total_solved / total_questions) * 40)
+            
+            # component 3: solution quality (0-15 points)
+            # higher acceptance rate = better solution quality
+            quality_score = min(15, acceptance_rate * 15)
+            
+            # component 4: community standing (0-15 points)
+            # assuming a total of ~5 million LeetCode users
+            # lower ranking is better
+            estimated_total_users = 5000000
+            percentile = max(0, 1 - (ranking / estimated_total_users))
+            standing_score = min(15, percentile * 15)
+            
+            # final score calculation (0-100)
+            final_score = round(difficulty_score + breadth_score + quality_score + standing_score)
+            
+            # determine skill level
+            if final_score >= 85:
+                level = "Expert"
+            elif final_score >= 70:
+                level = "Advanced"
+            elif final_score >= 50:
+                level = "Intermediate"
+            elif final_score >= 25:
+                level = "Beginner"
+            else:
+                level = "Novice"
+            
+            return {
+                "rating": final_score,
+                "level": level,
+                "details": {
+                    "totalSolved": total_solved,
+                    "totalQuestions": total_questions,
+                    "easySolved": easy_solved,
+                    "mediumSolved": medium_solved,
+                    "hardSolved": hard_solved,
+                    "acceptanceRate": acceptance_rate * 100,  
+                    "ranking": ranking,
+                    "components": {
+                        "difficultyScore": round(difficulty_score, 2),
+                        "breadthScore": round(breadth_score, 2),
+                        "qualityScore": round(quality_score, 2),
+                        "standingScore": round(standing_score, 2)
+                    }
+                }
+            }
+        
+        except Exception as e:
+            self.logger.error(f"Error extracting LeetCode stats: {str(e)}")
+            return {"rating": 0, "level": "Error", "error": str(e)}
     
     def extract_skills_from_text(self, text: str, threshold: float = 0.0) -> Dict[str, List[str]]:
         """

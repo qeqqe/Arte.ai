@@ -21,13 +21,9 @@ export class LeetcodeService {
   private readonly logger = new Logger(LeetcodeService.name);
 
   constructor(
-    private readonly configService: ConfigService,
     private httpService: HttpService,
     @Inject(DRIZZLE_PROVIDER) private readonly drizzle: NodePgDatabase,
-  ) {
-    const url = this.configService.getOrThrow<string>('LEETCODE_FETCH_URL');
-    this.logger.log(`LeetCode API URL: ${url || 'NOT SET'}`);
-  }
+  ) {}
 
   async fetchData(
     username: string,
@@ -37,63 +33,125 @@ export class LeetcodeService {
       throw new BadRequestException('Username must be a non-empty string');
     }
 
-    const leetcodeUrl = this.configService.get<string>('LEETCODE_FETCH_URL');
-
-    if (!leetcodeUrl) {
-      this.logger.error('LEETCODE_FETCH_URL environment variable is not set');
-      throw new InternalServerErrorException(
-        'LeetCode API URL is not configured',
-      );
-    }
-
     try {
-      const formattedUrl = leetcodeUrl.endsWith('/')
-        ? `${leetcodeUrl}${username}`
-        : `${leetcodeUrl}/${username}`;
+      const graphqlEndpoint = 'https://leetcode.com/graphql/';
 
-      this.logger.log(`Fetching data from ${formattedUrl}`);
+      // Create GraphQL query following the Java implementation
+      const query = {
+        query: `query getUserProfile($username: String!) {
+          allQuestionsCount {
+            difficulty
+            count
+          }
+          matchedUser(username: $username) {
+            contributions {
+              points
+            }
+            profile {
+              reputation
+              ranking
+            }
+            submissionCalendar
+            submitStats {
+              acSubmissionNum {
+                difficulty
+                count
+                submissions
+              }
+              totalSubmissionNum {
+                difficulty
+                count
+                submissions
+              }
+            }
+          }
+        }`,
+        variables: {
+          username,
+        },
+      };
+
+      this.logger.log(`Fetching LeetCode data for username: ${username}`);
 
       const response = await firstValueFrom(
-        this.httpService.get(formattedUrl).pipe(
-          catchError((error) => {
-            this.logger.error(
-              `HTTP request failed: ${error.message}`,
-              error.stack,
-            );
-            if (error.response) {
-              this.logger.error(`Response status: ${error.response.status}`);
-              this.logger.error(
-                `Response data: ${JSON.stringify(error.response.data)}`,
+        this.httpService
+          .post(graphqlEndpoint, query, {
+            headers: {
+              'Content-Type': 'application/json',
+              Referer: `https://leetcode.com/${username}/`,
+            },
+          })
+          .pipe(
+            catchError((error) => {
+              if (error?.response?.status === 404) {
+                throw new NotFoundException(
+                  `LeetCode username '${username}' not found`,
+                );
+              }
+              this.logger.error(`API error: ${error.message}`, error.stack);
+              throw new InternalServerErrorException(
+                `Failed to fetch LeetCode data: ${error.message}`,
               );
-            }
-            throw error;
-          }),
-        ),
+            }),
+          ),
       );
 
-      this.logger.log(`Successfully fetched data for ${username}`);
-      this.logger.log(`Response data: ${JSON.stringify(response.data)}`);
-
-      if (!response.data || !response.data.totalSolved) {
-        this.logger.error(
-          `Invalid response format: ${JSON.stringify(response.data)}`,
-        );
-        throw new InternalServerErrorException(
-          'Invalid response from LeetCode API',
+      // parse gQL response
+      const data = response.data;
+      if (!data || !data.data || !data.data.matchedUser) {
+        throw new NotFoundException(
+          `LeetCode username '${username}' not found`,
         );
       }
 
+      // relevant data from the GraphQL response
+      const matchedUser = data.data.matchedUser;
+      const submitStats = matchedUser.submitStats;
+      const acSubmissions = submitStats.acSubmissionNum;
+      const totalQuestions = data.data.allQuestionsCount.reduce(
+        (sum, item) => sum + item.count,
+        0,
+      );
+
+      // find submissions by difficulty
+      const totalSolved =
+        acSubmissions.find((s) => s.difficulty === 'All')?.count || 0;
+      const easySolved =
+        acSubmissions.find((s) => s.difficulty === 'Easy')?.count || 0;
+      const mediumSolved =
+        acSubmissions.find((s) => s.difficulty === 'Medium')?.count || 0;
+      const hardSolved =
+        acSubmissions.find((s) => s.difficulty === 'Hard')?.count || 0;
+
+      // lc calculates acceptance rate as: (accepted submissions / total submissions) * 100
+      const acceptedSubmissions =
+        acSubmissions.find((s) => s.difficulty === 'All')?.submissions || 0;
+      const totalSubmissions =
+        submitStats.totalSubmissionNum.find((s) => s.difficulty === 'All')
+          ?.submissions || 0;
+
+      const acceptanceRate =
+        totalSubmissions > 0
+          ? Math.round((acceptedSubmissions / totalSubmissions) * 100)
+          : 0;
+
+      this.logger.log(
+        `Calculated acceptance rate: ${acceptanceRate}% (${acceptedSubmissions}/${totalSubmissions})`,
+      );
+
+      const ranking = matchedUser.profile.ranking || 0;
+
       try {
         const leetcodeData: NewUserLeetcode = {
-          totalSolved: Number(response.data.totalSolved),
           userId: user.id,
           leetcodeUsername: username,
-          totalQuestions: Number(response.data.totalQuestions),
-          easySolved: Number(response.data.easySolved),
-          mediumSolved: Number(response.data.mediumSolved),
-          hardSolved: Number(response.data.hardSolved),
-          acceptanceRate: Math.round(Number(response.data.acceptanceRate)),
-          ranking: Number(response.data.ranking),
+          totalSolved,
+          totalQuestions,
+          easySolved,
+          mediumSolved,
+          hardSolved,
+          acceptanceRate,
+          ranking,
         };
 
         const existingRecord = await this.drizzle
@@ -111,13 +169,13 @@ export class LeetcodeService {
             .update(UserLeetcodeSchema)
             .set({
               leetcodeUsername: username,
-              totalSolved: Number(response.data.totalSolved),
-              totalQuestions: Number(response.data.totalQuestions),
-              easySolved: Number(response.data.easySolved),
-              mediumSolved: Number(response.data.mediumSolved),
-              hardSolved: Number(response.data.hardSolved),
-              acceptanceRate: Math.round(Number(response.data.acceptanceRate)),
-              ranking: Number(response.data.ranking),
+              totalSolved,
+              totalQuestions,
+              easySolved,
+              mediumSolved,
+              hardSolved,
+              acceptanceRate,
+              ranking,
             })
             .where(eq(UserLeetcodeSchema.userId, user.id));
         } else {
@@ -142,7 +200,15 @@ export class LeetcodeService {
         throw new InternalServerErrorException('Failed to save LeetCode data');
       }
 
-      return response.data;
+      return {
+        totalSolved,
+        totalQuestions,
+        easySolved,
+        mediumSolved,
+        hardSolved,
+        acceptanceRate,
+        ranking,
+      };
     } catch (err) {
       if (err.isAxiosError) {
         this.logger.error(`API error: ${err.message}`, err.stack);
