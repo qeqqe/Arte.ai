@@ -183,4 +183,3 @@ jobs:
         env:
           NODE_ENV: test
           NEXT_PUBLIC_API_URL: http://localhost:3001
-          # Add any other environment variables needed for the build
