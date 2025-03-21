@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { userGithubSchema } from '../github';
 import { relations, InferSelectModel, InferInsertModel } from 'drizzle-orm';
 import { UserLeetcodeSchema } from '../leetcode';
@@ -10,6 +10,7 @@ export const users = pgTable('users', {
   resume: text('resume'),
   refreshToken: text('refresh_token').unique(),
   lastLogin: timestamp('last_login').defaultNow().notNull(),
+  userProccessedSkills: jsonb('user_proccessed_skills').notNull().default('[]'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

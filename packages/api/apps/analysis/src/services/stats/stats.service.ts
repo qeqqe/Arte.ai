@@ -8,7 +8,6 @@ import { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Logger } from 'nestjs-pino';
-
 @Injectable()
 export class StatsService {
   constructor(
@@ -53,6 +52,7 @@ export class StatsService {
               hardSolved: leetcodestat.hardSolved,
               acceptanceRate: leetcodestat.acceptanceRate,
               ranking: leetcodestat.ranking,
+              proccessedLeetcodeStat: leetcodestat.proccessedLeetcodeStat,
             }
           : undefined,
         userGithubRepos:
@@ -91,25 +91,77 @@ export class StatsService {
             }))
           : [];
 
-      if (userGithubRepos.length === 0) {
-        this.logger.warn(`No GitHub repositories found for user: ${userId}`);
-        return { skills: {} };
-      }
-
       try {
         const pythonServiceUrl =
           this.configService.getOrThrow<string>('PYTHON_URL');
 
+        const payload = {
+          userGithubRepos: userGithubRepos,
+          leetCodeStat: leetcodestat
+            ? {
+                leetcodeUsername: leetcodestat.leetcodeUsername,
+                totalSolved: leetcodestat.totalSolved,
+                totalQuestions: leetcodestat.totalQuestions,
+                easySolved: leetcodestat.easySolved,
+                mediumSolved: leetcodestat.mediumSolved,
+                hardSolved: leetcodestat.hardSolved,
+                acceptanceRate: leetcodestat.acceptanceRate,
+                ranking: leetcodestat.ranking,
+                proccessedLeetcodeStat: leetcodestat.proccessedLeetcodeStat,
+              }
+            : null,
+        };
+
         const processedResponse = await this.httpService.axiosRef.post(
           `${pythonServiceUrl}/extract-skills`,
-          { text: JSON.stringify(userGithubRepos) },
+          { text: JSON.stringify(payload) },
         );
 
-        this.logger.log('Successfully processed GitHub repos');
+        this.logger.log('Successfully processed user data');
+
+        if (leetcodestat && processedResponse.data.leetcode) {
+          try {
+            this.logger.log('Updating processed LeetCode stats in database');
+
+            await this.drizzle
+              .update(UserLeetcodeSchema)
+              .set({
+                proccessedLeetcodeStat: processedResponse.data.leetcode,
+              } as unknown as typeof UserLeetcodeSchema.$inferInsert)
+              .where(eq(UserLeetcodeSchema.userId, userId));
+
+            this.logger.log('Successfully updated processed LeetCode stats');
+          } catch (dbError) {
+            this.logger.error(
+              `Failed to update processed LeetCode stats: ${dbError.message}`,
+              dbError.stack,
+            );
+          }
+        }
+        if (processedResponse.data.skills) {
+          try {
+            this.logger.log('Updating processed User stats in database');
+
+            await this.drizzle
+              .update(users)
+              .set({
+                userProccessedSkills: processedResponse.data.skills,
+              } as unknown as typeof users.$inferInsert)
+              .where(eq(users.id, userId));
+
+            this.logger.log('Successfully updated processed LeetCode stats');
+          } catch (dbError) {
+            this.logger.error(
+              `Failed to update processed LeetCode stats: ${dbError.message}`,
+              dbError.stack,
+            );
+          }
+        }
+
         return processedResponse.data;
       } catch (error) {
         this.logger.error(
-          `Failed to process user GitHub data: ${error.message}`,
+          `Failed to process user data: ${error.message}`,
           error.stack,
         );
         return { skills: {}, error: error.message };

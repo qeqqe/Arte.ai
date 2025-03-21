@@ -54,6 +54,7 @@ CREATE TABLE "user_leetcode_schema" (
 	"hard_solved" integer NOT NULL,
 	"acceptance_rate" integer NOT NULL,
 	"ranking" integer NOT NULL,
+	"proccessed_leetcode_stat" jsonb DEFAULT '[]' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );

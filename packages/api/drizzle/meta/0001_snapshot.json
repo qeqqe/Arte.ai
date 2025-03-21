@@ -1,6 +1,6 @@
 {
-  "id": "b67f1a88-72a0-4911-a24d-1eb8d69d35e9",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "3353f748-20ed-40b4-8216-f8d0770e3390",
+  "prevId": "b67f1a88-72a0-4911-a24d-1eb8d69d35e9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -476,6 +476,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "user_proccessed_skills": {
+          "name": "user_proccessed_skills",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'"
         },
         "created_at": {
           "name": "created_at",

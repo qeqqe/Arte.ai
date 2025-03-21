@@ -59,6 +59,129 @@ class SkillExtractor:
         # Create the pattern with word boundaries
         patterns = [r'\b' + re.escape(skill) + r'\b' for skill in all_skills]
         return re.compile('|'.join(patterns), re.IGNORECASE)
+  
+
+  
+    def extract_pss_from_leetcode(self) -> Dict[str, any]:
+        """
+        Extract problem-solving skills from user's LeetCode statistics.
+        
+        Returns:
+            A dictionary containing a numerical rating (0-100) and a qualitative assessment
+            of the user's problem-solving skills based on LeetCode performance.
+        """
+        try:
+            leetcode_stats = self.user_stats.get("leetCodeStat", {})
+            if not leetcode_stats:
+                return {}
+                
+            total_solved = leetcode_stats.get("totalSolved", 0)
+            total_questions = leetcode_stats.get("totalQuestions", 0)
+            easy_solved = leetcode_stats.get("easySolved", 0)
+            medium_solved = leetcode_stats.get("mediumSolved", 0)
+            hard_solved = leetcode_stats.get("hardSolved", 0)
+            acceptance_rate = leetcode_stats.get("acceptanceRate", 0) / 100   
+            ranking = leetcode_stats.get("ranking", 0)
+            
+            # handle edge cases to avoid division by 0
+            if total_questions == 0 or ranking == 0:
+                return {"rating": 0, "level": "Unknown", "details": leetcode_stats}
+            
+            # Use logarithmic weightings for different difficulty levels
+            # Easy: 1, Medium: 3, Hard: 6
+            weighted_solved = (easy_solved * 1) + (medium_solved * 3) + (hard_solved * 6)
+            
+            # Component 1: problem difficulty & volume score (0-50 points)
+            # use logarithmic scaling to value early problems more
+            # this means first 100-200 problems give significant gains, then diminishing returns
+            log_base = 1.1  # Adjusting this affects how quickly gains diminish
+            difficulty_scale = 30 * (1 - (1 / (log_base ** (weighted_solved / 100))))
+            
+            # add bonus for having significant numbers of medium and hard problems
+            medium_ratio = medium_solved / max(1, total_solved)
+            hard_ratio = hard_solved / max(1, total_solved)
+            difficulty_bonus = (medium_ratio * 10) + (hard_ratio * 15)
+            
+            difficulty_score = min(50, difficulty_scale + difficulty_bonus)
+            
+            # Component 2:problem-solving breadth (0-20 points)
+            # recognize that solving even 5-7% of all LeetCode problems is significant
+            # use logarithmic scaling that rewards solving up to ~500 problems
+            percentage_solved = total_solved / max(1, total_questions)
+            breadth_scale = 20 * (1 - (1 / (log_base ** (total_solved / 50))))
+            breadth_score = min(20, breadth_scale)
+            
+            # Component 3: solution quality (0-15 points)
+            # higher acceptance rate = better solution quality
+            quality_score = min(15, acceptance_rate * 15)
+            
+            # Component 4: Community Standing (0-15 points)
+            # top 50K is already quite good, world-class would be top 5K
+            estimated_total_users = 5000000
+            # logarithmic scaling for ranking
+            if ranking <= 5000:
+                standing_score = 15  # top 5K users get full score
+            elif ranking <= 50000:
+                standing_score = 12 + (3 * (1 - (ranking - 5000) / 45000))
+            elif ranking <= 200000:
+                standing_score = 8 + (4 * (1 - (ranking - 50000) / 150000))
+            else:
+                standing_score = 8 * (1 - min(1, (ranking - 200000) / 800000))
+            
+            # Final Score Calculation (0-100)
+            final_score = round(difficulty_score + breadth_score + quality_score + standing_score)
+            
+            # more realistic skill level determination
+            if final_score >= 85:
+                level = "Expert"
+            elif final_score >= 70:
+                level = "Advanced"
+            elif final_score >= 50:
+                level = "Intermediate"
+            elif final_score >= 30:
+                level = "Beginner"
+            else:
+                level = "Novice"
+                
+            # ensure level is appropriate for total problems solved
+            # someone who solved 500+ problems shouldn't be below advanced regardless of other factors
+            if total_solved >= 500 and level not in ["Advanced", "Expert"]:
+                level = "Advanced"
+                # adjust score if necessary
+                if final_score < 70:
+                    final_score = 70  # min score for Advanced
+            elif total_solved >= 300 and level not in ["Intermediate", "Advanced", "Expert"]:
+                level = "Intermediate"
+                if final_score < 50:
+                    final_score = 50  # min score for Intermediate
+            elif total_solved >= 100 and level == "Novice":
+                level = "Beginner"
+                if final_score < 30:
+                    final_score = 30  # min score for Beginner
+            
+            return {
+                "rating": final_score,
+                "level": level,
+                "details": {
+                    "totalSolved": total_solved,
+                    "totalQuestions": total_questions,
+                    "easySolved": easy_solved,
+                    "mediumSolved": medium_solved,
+                    "hardSolved": hard_solved,
+                    "acceptanceRate": acceptance_rate * 100,  
+                    "ranking": ranking,
+                    "components": {
+                        "difficultyScore": round(difficulty_score, 2),
+                        "breadthScore": round(breadth_score, 2),
+                        "qualityScore": round(quality_score, 2),
+                        "standingScore": round(standing_score, 2)
+                    }
+                }
+            }
+        
+        except Exception as e:
+            self.logger.error(f"Error extracting LeetCode stats: {str(e)}")
+            return {"rating": 0, "level": "Error", "error": str(e)}
     
     def extract_skills_from_text(self, text: str, threshold: float = 0.0) -> Dict[str, List[str]]:
         """

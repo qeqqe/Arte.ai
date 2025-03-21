@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "user_proccessed_skills" jsonb DEFAULT '[]' NOT NULL;

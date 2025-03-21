@@ -11,16 +11,6 @@ interface RequestWithUser extends Request {
 export class LeetcodeController {
   constructor(private readonly leetcodeService: LeetcodeService) {}
 
-  @Get()
-  getAll() {
-    return { message: 'LeetCode base path works!' };
-  }
-
-  @Get('test')
-  test() {
-    return { message: 'LeetCode test path works!' };
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get(':username')
   async getByUsername(
