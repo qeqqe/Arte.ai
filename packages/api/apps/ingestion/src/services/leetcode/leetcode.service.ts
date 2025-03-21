@@ -7,7 +7,6 @@ import {
   InternalServerErrorException,
   Inject,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { UserPayload, DRIZZLE_PROVIDER } from '@app/common';
@@ -36,7 +35,6 @@ export class LeetcodeService {
     try {
       const graphqlEndpoint = 'https://leetcode.com/graphql/';
 
-      // Create GraphQL query following the Java implementation
       const query = {
         query: `query getUserProfile($username: String!) {
           allQuestionsCount {

@@ -43,7 +43,6 @@ import { TestController } from './test.controller';
         HTTP_PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
-        LEETCODE_FETCH_URL: Joi.string().required(),
         DATABASE_URL: Joi.string().required(),
       }),
     }),

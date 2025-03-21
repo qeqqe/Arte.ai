@@ -1,4 +1,11 @@
-import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { users } from '../user';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 export const UserLeetcodeSchema = pgTable('user_leetcode_schema', {
@@ -14,6 +21,9 @@ export const UserLeetcodeSchema = pgTable('user_leetcode_schema', {
   hardSolved: integer('hard_solved').notNull(),
   acceptanceRate: integer('acceptance_rate').notNull(),
   ranking: integer('ranking').notNull(),
+  proccessedLeetcodeStat: jsonb('proccessed_leetcode_stat')
+    .notNull()
+    .default('[]'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -60,18 +60,7 @@ class SkillExtractor:
         patterns = [r'\b' + re.escape(skill) + r'\b' for skill in all_skills]
         return re.compile('|'.join(patterns), re.IGNORECASE)
   
-    # leetCodeStat: leetcodestat
-    #       ? {
-    #           leetcodeUsername: leetcodestat.leetcodeUsername,
-    #           totalSolved: leetcodestat.totalSolved,
-    #           totalQuestions: leetcodestat.totalQuestions,
-    #           easySolved: leetcodestat.easySolved,
-    #           mediumSolved: leetcodestat.mediumSolved,
-    #           hardSolved: leetcodestat.hardSolved,
-    #           acceptanceRate: leetcodestat.acceptanceRate,
-    #           ranking: leetcodestat.ranking,
-    #         }
-    #       : undefined,
+
   
     def extract_pss_from_leetcode(self) -> Dict[str, any]:
         """
@@ -86,7 +75,6 @@ class SkillExtractor:
             if not leetcode_stats:
                 return {}
                 
-            # extract relevant fields
             total_solved = leetcode_stats.get("totalSolved", 0)
             total_questions = leetcode_stats.get("totalQuestions", 0)
             easy_solved = leetcode_stats.get("easySolved", 0)
@@ -99,41 +87,77 @@ class SkillExtractor:
             if total_questions == 0 or ranking == 0:
                 return {"rating": 0, "level": "Unknown", "details": leetcode_stats}
             
-            # component 1: problem difficulty score (0-50 points)
-            # weight problems by difficulty: easy=1, medium=2, hard=4
-            weighted_solved = (easy_solved * 1) + (medium_solved * 2) + (hard_solved * 4)
-            max_possible_weighted = total_questions * 2  # assuming average difficulty is medium
-            difficulty_score = min(50, (weighted_solved / max_possible_weighted) * 50)
+            # Use logarithmic weightings for different difficulty levels
+            # Easy: 1, Medium: 3, Hard: 6
+            weighted_solved = (easy_solved * 1) + (medium_solved * 3) + (hard_solved * 6)
             
-            # component 2: problem-solving breadth (0-20 points)
-            # measure how many problems they've solved relative to the total
-            breadth_score = min(20, (total_solved / total_questions) * 40)
+            # Component 1: problem difficulty & volume score (0-50 points)
+            # use logarithmic scaling to value early problems more
+            # this means first 100-200 problems give significant gains, then diminishing returns
+            log_base = 1.1  # Adjusting this affects how quickly gains diminish
+            difficulty_scale = 30 * (1 - (1 / (log_base ** (weighted_solved / 100))))
             
-            # component 3: solution quality (0-15 points)
+            # add bonus for having significant numbers of medium and hard problems
+            medium_ratio = medium_solved / max(1, total_solved)
+            hard_ratio = hard_solved / max(1, total_solved)
+            difficulty_bonus = (medium_ratio * 10) + (hard_ratio * 15)
+            
+            difficulty_score = min(50, difficulty_scale + difficulty_bonus)
+            
+            # Component 2:problem-solving breadth (0-20 points)
+            # recognize that solving even 5-7% of all LeetCode problems is significant
+            # use logarithmic scaling that rewards solving up to ~500 problems
+            percentage_solved = total_solved / max(1, total_questions)
+            breadth_scale = 20 * (1 - (1 / (log_base ** (total_solved / 50))))
+            breadth_score = min(20, breadth_scale)
+            
+            # Component 3: solution quality (0-15 points)
             # higher acceptance rate = better solution quality
             quality_score = min(15, acceptance_rate * 15)
             
-            # component 4: community standing (0-15 points)
-            # assuming a total of ~5 million LeetCode users
-            # lower ranking is better
+            # Component 4: Community Standing (0-15 points)
+            # top 50K is already quite good, world-class would be top 5K
             estimated_total_users = 5000000
-            percentile = max(0, 1 - (ranking / estimated_total_users))
-            standing_score = min(15, percentile * 15)
+            # logarithmic scaling for ranking
+            if ranking <= 5000:
+                standing_score = 15  # top 5K users get full score
+            elif ranking <= 50000:
+                standing_score = 12 + (3 * (1 - (ranking - 5000) / 45000))
+            elif ranking <= 200000:
+                standing_score = 8 + (4 * (1 - (ranking - 50000) / 150000))
+            else:
+                standing_score = 8 * (1 - min(1, (ranking - 200000) / 800000))
             
-            # final score calculation (0-100)
+            # Final Score Calculation (0-100)
             final_score = round(difficulty_score + breadth_score + quality_score + standing_score)
             
-            # determine skill level
+            # more realistic skill level determination
             if final_score >= 85:
                 level = "Expert"
             elif final_score >= 70:
                 level = "Advanced"
             elif final_score >= 50:
                 level = "Intermediate"
-            elif final_score >= 25:
+            elif final_score >= 30:
                 level = "Beginner"
             else:
                 level = "Novice"
+                
+            # ensure level is appropriate for total problems solved
+            # someone who solved 500+ problems shouldn't be below advanced regardless of other factors
+            if total_solved >= 500 and level not in ["Advanced", "Expert"]:
+                level = "Advanced"
+                # adjust score if necessary
+                if final_score < 70:
+                    final_score = 70  # min score for Advanced
+            elif total_solved >= 300 and level not in ["Intermediate", "Advanced", "Expert"]:
+                level = "Intermediate"
+                if final_score < 50:
+                    final_score = 50  # min score for Intermediate
+            elif total_solved >= 100 and level == "Novice":
+                level = "Beginner"
+                if final_score < 30:
+                    final_score = 30  # min score for Beginner
             
             return {
                 "rating": final_score,

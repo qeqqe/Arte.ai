@@ -76,15 +76,32 @@ def create_app() -> FastAPI:
                 if isinstance(text, str):
                     try:
                         parsed_data = json.loads(text)
-                        logger.info(f"Successfully parsed JSON string, found {len(parsed_data)} items")
+                        logger.info(f"Successfully parsed JSON string")
                         
-                        extractor = SkillExtractor(user_stats={"userGithubRepos": parsed_data})
-                        skills = extractor.extract_skills_from_github()
-                        leetcode_extractor = SkillExtractor(user_stats={"leetCodeStat": parsed_data})
-                        leetcode_skills = leetcode_extractor.extract_skills_from_github()
+                        # Create an extractor with all user stats
+                        user_stats = {}
+                        if "userGithubRepos" in parsed_data:
+                            user_stats["userGithubRepos"] = parsed_data["userGithubRepos"]
+                        if "leetCodeStat" in parsed_data:
+                            user_stats["leetCodeStat"] = parsed_data["leetCodeStat"]
                         
-                        logger.info(f"Extracted {sum(len(skills_list) for category, skills_list in skills.items())} skills from GitHub repos")
-                        return {"skills": skills}
+                        extractor = SkillExtractor(user_stats=user_stats)
+                        
+                        # Get GitHub skills
+                        github_skills = extractor.extract_skills_from_github()
+                        logger.info(f"Extracted GitHub skills")
+                        
+                        # Get LeetCode assessment if available
+                        leetcode_assessment = {}
+                        if "leetCodeStat" in parsed_data and parsed_data["leetCodeStat"]:
+                            leetcode_assessment = extractor.extract_pss_from_leetcode()
+                            logger.info(f"Extracted LeetCode assessment: {leetcode_assessment}")
+                        
+                        # Return both skills and LeetCode assessment
+                        return {
+                            "skills": github_skills,
+                            "leetcode": leetcode_assessment
+                        }
                     except json.JSONDecodeError as je:
                         logger.warning(f"Not a valid JSON string: {str(je)}")
                 

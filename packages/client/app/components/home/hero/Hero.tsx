@@ -6,7 +6,7 @@ import { useGetStartedHandler } from '../topbar/GetStartedButton/HandleGetStarte
 import Visualization from './visualization/Visualization';
 
 const Hero = () => {
-  const { handleGetStartedClick, isLoading } = useGetStartedHandler();
+  const { handleGetStartedClick } = useGetStartedHandler();
   return (
     <div className="relative min-h-[90vh] overflow-hidden">
       {/* Abstract background elements */}
