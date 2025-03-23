@@ -6,7 +6,6 @@ import * as githubSchema from '../github';
 import * as userSchema from '../user';
 import * as leetcodeSchema from '../leetcode';
 import * as JobPostSchema from '../jobpost';
-import * as migrationSchema from '../migration';
 
 @Injectable()
 export class DrizzleProvider {
@@ -43,7 +42,6 @@ export class DrizzleProvider {
           ...userSchema,
           ...leetcodeSchema,
           ...JobPostSchema,
-          ...migrationSchema,
         },
       });
     } catch (error) {
