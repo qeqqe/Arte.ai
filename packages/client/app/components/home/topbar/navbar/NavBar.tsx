@@ -7,7 +7,6 @@ import {
   RiInformationLine,
   RiMenuLine,
   RiCloseLine,
-  RiArrowRightUpLine,
 } from '@remixicon/react';
 import { NavItem, NavItemProps } from './NavItem';
 import MobileMenu from './MobileMenu';

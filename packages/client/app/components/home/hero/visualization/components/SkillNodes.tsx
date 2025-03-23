@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Skill } from '../../visualization/types';
 
-// Sample skills data - in a real app, this would come from your API
 const skills: Skill[] = [
   { id: 1, name: 'React', level: 85, color: '#61dafb', category: 'Frontend' },
   {
@@ -20,7 +19,7 @@ const skills: Skill[] = [
 
 const SkillNodes = () => {
   const [isVisible, setIsVisible] = useState(false);
-  const [rotation, setRotation] = useState(0);
+  const [, setRotation] = useState(0);
   const [skillPositions, setSkillPositions] = useState<
     Array<{
       angle: number;
@@ -31,14 +30,14 @@ const SkillNodes = () => {
     }>
   >([]);
 
-  // Initialize each skill with unique orbital parameters
+  // unique orbital for each skill
   useEffect(() => {
-    const initialPositions = skills.map((_, index) => {
+    const initialPositions = skills.map(() => {
       return {
-        angle: Math.random() * 360, // Random starting angle
-        radius: 5 + Math.random() * 3, // EXTREMELY REDUCED: Small radius (5-8)
-        speed: 0.1 + Math.random() * 0.2, // INCREASED: Faster speed for more noticeable movement
-        eccentricity: Math.random() * 0.1, // Reduced eccentricity for tighter orbits
+        angle: Math.random() * 360, // random starter angle
+        radius: 5 + Math.random() * 3, // radius
+        speed: 0.1 + Math.random() * 0.2, // speed
+        eccentricity: Math.random() * 0.1, // eccentricity for tighter orbits
         phaseOffset: Math.random() * Math.PI * 2,
       };
     });
@@ -58,13 +57,12 @@ const SkillNodes = () => {
       setSkillPositions((prev) =>
         prev.map((pos, idx) => {
           const skill = skills[idx];
-          const maxRadius = 7; // Maximum radius (very small)
-          const minRadius = 3; // Minimum radius (very small)
+          const maxRadius = 7;
+          const minRadius = 3;
 
-          // Calculate new angle based on unique speed
+          // new angle based on speed
           const newAngle = (pos.angle + pos.speed) % 360;
 
-          // Calculate radius with slight oscillation based on skill level
           const oscillation =
             Math.sin(newAngle * (Math.PI / 180) + pos.phaseOffset) *
             pos.eccentricity;
