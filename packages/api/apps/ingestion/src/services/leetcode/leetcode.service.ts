@@ -1,4 +1,4 @@
-import { LeetcodeFetchResponse } from '@app/dtos/leetcode';
+import { LeetcodeFetchResponse } from '../../controllers/leetcode/leetcode.controller';
 import {
   Injectable,
   NotFoundException,
@@ -208,6 +208,11 @@ export class LeetcodeService {
         ranking,
       };
     } catch (err) {
+      // Allow NotFoundException to propagate
+      if (err instanceof NotFoundException) {
+        throw err;
+      }
+
       if (err.isAxiosError) {
         this.logger.error(`API error: ${err.message}`, err.stack);
 
