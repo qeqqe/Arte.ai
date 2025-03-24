@@ -1,42 +1,40 @@
 import { NestFactory } from '@nestjs/core';
-import { AnalysisModule } from './analysis.module';
+import { NlpServiceModule } from './nlp-service.module';
 import { ConfigService } from '@nestjs/config';
 import * as compression from "compression";
-import helmet from "helmet";
+import helmet from "helmet"; 
 import { Logger } from 'nestjs-pino';
-import * as cookieParser from 'cookie-parser';
+import * as cookieParser from 'cookie-parser'
 import { ValidationPipe } from '@nestjs/common';
-
 async function bootstrap() {
-  const app = await NestFactory.create(AnalysisModule, {
+  const app = await NestFactory.create(NlpServiceModule, {
     bufferLogs: true,
     cors: true,
   });
 
   const configService = app.get(ConfigService);
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
 
   app.useLogger(app.get(Logger));
 
-  app.use(cookieParser());
   app.use(compression());
   app.use(helmet());
+  app.use(cookieParser());
 
   app.enableCors({
-    origin: frontendUrl,
+    origin:  configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
-  });
+  })
 
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
-  );
+    transform: true,
+    forbidNonWhitelisted: true,
+    whitelist: true
+  }))
 
   const server = app.getHttpAdapter().getInstance();
 
-  if (server && server._router && server._router.stack) {
+   if (server && server._router && server._router.stack) {
     const routes = server._router.stack
       .filter((layer) => layer.route)
       .map((layer) => {
@@ -61,7 +59,7 @@ async function bootstrap() {
   await app.listen(port);
 
   const logger = app.get(Logger);
-  logger.log(`Analysis service running on port ${port}`);
-}
+  logger.log(`Ingestion service running on port ${port}`);
 
+}
 bootstrap();

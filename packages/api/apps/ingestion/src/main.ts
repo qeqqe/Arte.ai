@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { IngestionModule } from './ingestion.module';
 import { ConfigService } from '@nestjs/config';
+import * as compression from "compression";
+import helmet from "helmet";
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
@@ -17,6 +19,8 @@ async function bootstrap() {
   app.useLogger(app.get(Logger));
 
   app.use(cookieParser());
+  app.use(compression());
+  app.use(helmet());
 
   app.enableCors({
     origin: frontendUrl,
