@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class LeetcodeFetchResponse {
   @IsNumber()
@@ -28,6 +29,17 @@ export class LeetcodeFetchResponse {
   @IsNumber()
   @IsNotEmpty()
   ranking: number;
+}
+
+// DTO for username requests
+export class LeetcodeUsernameDto {
+  @ApiProperty({
+    description: 'LeetCode username',
+    example: 'johndoe',
+  })
+  @IsString()
+  @IsNotEmpty()
+  username: string;
 }
 
 export interface LeetcodeUsernameRequest {
