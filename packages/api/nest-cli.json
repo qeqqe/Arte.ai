@@ -54,6 +54,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/analysis/tsconfig.app.json"
       }
+    },
+    "nlp-service": {
+      "type": "application",
+      "root": "apps/nlp-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/nlp-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/nlp-service/tsconfig.app.json"
+      }
     }
   }
 }

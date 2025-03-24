@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthModule } from './auth.module';
 import { ValidationPipe } from '@nestjs/common';
+import * as compression from "compression";
+import helmet from "helmet";
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ConfigService } from '@nestjs/config';
@@ -9,7 +11,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
   const logger = app.get(Logger);
   const configService = app.get(ConfigService);
-
+  app.use(compression());
+  app.use(helmet());
   const httpPort = configService.get('HTTP_PORT', 3001);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.use(cookieParser());
