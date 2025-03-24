@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { NlpServiceModule } from './nlp-service.module';
 import { ConfigService } from '@nestjs/config';
-import * as compression from "compression";
-import helmet from "helmet"; 
+import * as compression from 'compression';
+import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
-import * as cookieParser from 'cookie-parser'
+import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(NlpServiceModule, {
@@ -21,20 +21,21 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin:  configService.getOrThrow<string>('FRONTEND_URL'),
+    origin: configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
-  })
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
-    transform: true,
-    forbidNonWhitelisted: true,
-    whitelist: true
-  }))
+      transform: true,
+      forbidNonWhitelisted: true,
+      whitelist: true,
+    }),
+  );
 
   const server = app.getHttpAdapter().getInstance();
 
-   if (server && server._router && server._router.stack) {
+  if (server && server._router && server._router.stack) {
     const routes = server._router.stack
       .filter((layer) => layer.route)
       .map((layer) => {
@@ -60,6 +61,5 @@ async function bootstrap() {
 
   const logger = app.get(Logger);
   logger.log(`Ingestion service running on port ${port}`);
-
 }
 bootstrap();
