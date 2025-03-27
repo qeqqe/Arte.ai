@@ -18,7 +18,7 @@ export class CompareService {
     string,
     { response: string; timestamp: number }
   >();
-  private readonly CACHE_TTL = 3600000; // 1 hour in milliseconds
+  private readonly CACHE_TTL = 3600000; // 1h ttl
 
   constructor(
     private readonly configService: ConfigService,
@@ -26,7 +26,6 @@ export class CompareService {
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase<typeof schema>,
   ) {
-    // Initialize OpenAI client for GitHub marketplace models
     const OPENAI_API_KEY = this.configService.get<string>('OPENAI_API_KEY');
     const baseURL = this.configService.get<string>(
       'GITHUB_MODEL_ENDPOINT',
@@ -51,7 +50,6 @@ export class CompareService {
   async compareUserToJob(jobId: string, userId: string): Promise<string> {
     this.logger.log(`Comparing user ${userId} with job ${jobId}`);
 
-    // Check cache first
     const cacheKey = `${userId}:${jobId}`;
     const cachedResponse = this.getFromCache(cacheKey);
 
@@ -67,7 +65,7 @@ export class CompareService {
         this.getUserSkills(userId),
       ]);
 
-      // generate analysis using GitHub marketplace models
+      // generate analysis using gh marketplace models
       const analysisResponse = await this.generateSkillGapAnalysis(
         userProcessedSkills,
         jobInfo.processedSkills,
@@ -177,7 +175,7 @@ export class CompareService {
   private async getUserSkills(userId: string) {
     this.logger.log(`Fetching skills for user ${userId}`);
     const userProcessedSkills = await this.drizzle
-      .select()
+      .select({ userProccessedSkills: users.userProccessedSkills })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1)
