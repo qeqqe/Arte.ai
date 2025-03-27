@@ -19,8 +19,8 @@ import { CompareService } from './service/compare/compare.service';
       ],
       validationSchema: Joi.object({
         OPENAI_API_KEY: Joi.string().required(),
-        OPENAI_MODEL: Joi.string().default('gpt-4o'),
-        OPENAI_BASE_URL: Joi.string().optional(),
+        MODEL: Joi.string().default('gpt-4o-mini'),
+        BASE_URL: Joi.string().default('https://models.inference.ai.azure.com'),
         HTTP_PORT: Joi.number().default(3004),
         ALLOWED_ORIGINS: Joi.string().required(),
         THROTTLE_LIMIT: Joi.number().default(100),
@@ -28,6 +28,12 @@ import { CompareService } from './service/compare/compare.service';
         CACHE_ENABLED: Joi.boolean().default(true),
         CACHE_TTL: Joi.number().default(3600),
         METRICS_ENABLED: Joi.boolean().default(true),
+        JWT_SECRET: Joi.string().required(),
+        NODE_ENV: Joi.string().default('development'),
+        RABBITMQ_URI: Joi.string().required(),
+        DATABASE_URL: Joi.string().required(),
+        JOB_SCRAPER_URL: Joi.string().required(),
+        JOB_SKILL_EXTRACTOR_URL: Joi.string().required(),
       }),
     }),
     ThrottlerModule.forRootAsync({
