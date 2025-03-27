@@ -30,17 +30,13 @@ class EnvironmenVariable {
   @IsOptional()
   OPENAI_API_KEY: string;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  CLAUDE_API_KEY: string;
+  THROTTLE_LIMIT: number;
 
-  @IsString()
+  @IsNumber()
   @IsOptional()
-  GEMINI_API_KEY: string;
-
-  @IsString()
-  @IsOptional()
-  GROQ_API_KEY: string;
+  THROTTLE_TTL: number;
 
   @IsBoolean()
   @IsOptional()
@@ -49,6 +45,10 @@ class EnvironmenVariable {
   @IsNumber()
   @IsOptional()
   CACHE_TTL: number;
+
+  @IsBoolean()
+  @IsOptional()
+  METRICS_ENABLED: boolean;
 }
 
 export function validate(config: Record<string, number>) {
