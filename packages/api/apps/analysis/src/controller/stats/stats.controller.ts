@@ -6,6 +6,8 @@ import {
   HttpException,
   HttpStatus,
   Query,
+  Post,
+  Body,
 } from '@nestjs/common';
 import { Get } from '@nestjs/common';
 import { StatsService } from '../../services/stats/stats.service';
@@ -39,9 +41,9 @@ export class StatsController {
     }
   }
 
-  @Get('extract-job-skill')
+  @Get('extract-job-skill-microservice')
   @UseGuards(JwtAuthGuard)
-  async getJobPostInfo(@Query('jobId') JobId: string) {
-    return this.statsService.getJobPostInfo(JobId);
+  async getJobPostInfo(@Query('jobId') jobId: string) {
+    return this.statsService.getJobPostInfo(jobId);
   }
 }

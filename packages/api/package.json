@@ -51,6 +51,7 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "nestjs-pino": "^4.3.0",
+    "openai": "^4.89.1",
     "passport-github2": "^0.1.12",
     "passport-jwt": "^4.0.1",
     "pdf-parse": "^1.1.1",

@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
+
 async function bootstrap() {
   const app = await NestFactory.create(NlpServiceModule, {
     bufferLogs: true,
@@ -21,7 +22,8 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: configService.getOrThrow<string>('FRONTEND_URL'),
+    origin: configService.getOrThrow<string>('ALLOWED_ORIGINS').split(','),
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
@@ -32,6 +34,8 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
+
+  app.useGlobalFilters();
 
   const server = app.getHttpAdapter().getInstance();
 
@@ -56,10 +60,10 @@ async function bootstrap() {
     );
   }
 
-  const port = configService.get<number>('HTTP_PORT', 3002);
+  const port = configService.get<number>('HTTP_PORT', 3004);
   await app.listen(port);
 
   const logger = app.get(Logger);
-  logger.log(`Ingestion service running on port ${port}`);
+  logger.log(`NLP service running on port ${port}`);
 }
 bootstrap();

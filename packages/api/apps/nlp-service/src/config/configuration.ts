@@ -9,9 +9,6 @@ export default () => ({
 
   // NLP api keys
   openaiApiKey: process.env.OPENAI_API_KEY,
-  claudeApiKey: process.env.CLAUDE_API_KEY,
-  geminiApiKey: process.env.GEMINI_API_KEY,
-  groqApiKey: process.env.GROQ_API_KEY,
 
   // cache config
   cacheEnabled: process.env.CACHE_ENABLED === 'true',

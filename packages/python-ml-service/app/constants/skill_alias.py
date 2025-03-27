@@ -180,7 +180,7 @@ def get_canonical_skill_name(skill):
     """
     Get the canonical name of a skill from any alias.
     
-    Args:
+    Args: 
         skill: The skill name or alias to normalize
         
     Returns:

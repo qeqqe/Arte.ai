@@ -6,7 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { join } from 'path';
 import * as Joi from 'joi';
-
+import { CompareController } from './controller/compare/compare.controller';
+import { CompareService } from './service/compare/compare.service';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -17,12 +18,11 @@ import * as Joi from 'joi';
         '.env',
       ],
       validationSchema: Joi.object({
-        GROQ_API_KEY: Joi.string().optional(),
-        OPENAI_API_KEY: Joi.string().optional(),
-        CLAUDE_API_KEY: Joi.string().optional(),
-        GEMINI_API_KEY: Joi.string().optional(),
+        OPENAI_API_KEY: Joi.string().required(),
+        OPENAI_MODEL: Joi.string().default('gpt-4o'),
+        OPENAI_BASE_URL: Joi.string().optional(),
         HTTP_PORT: Joi.number().default(3004),
-        FRONTEND_URL: Joi.string().required(),
+        ALLOWED_ORIGINS: Joi.string().required(),
         THROTTLE_LIMIT: Joi.number().default(100),
         THROTTLE_TTL: Joi.number().default(60),
         CACHE_ENABLED: Joi.boolean().default(true),
@@ -46,7 +46,7 @@ import * as Joi from 'joi';
     LoggerModule,
     RmqModule.register({ name: 'NLP_SERVICE' }),
   ],
-  controllers: [],
-  providers: [],
+  controllers: [CompareController],
+  providers: [CompareService],
 })
 export class NlpServiceModule {}

@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   NotFoundException,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -22,5 +24,10 @@ export class LinkedinController {
     const user = request['user'] as UserPayload;
     const jobDetails = await this.linkedinService.scrapeJob(jobId, user.id);
     return jobDetails;
+  }
+  // this one for other microservices to extract the job details if they aren't already
+  @Post('scrape-job-microservice')
+  async scrapeJobMicroservice(@Body() jobId: string, @Body() userId: string) {
+    return this.linkedinService.scrapeJob(jobId, userId);
   }
 }
