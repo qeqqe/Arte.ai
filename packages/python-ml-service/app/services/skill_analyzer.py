@@ -1,7 +1,7 @@
 from typing import Dict, List, Any, Optional
 import numpy as np
 from .skill_extractor import SkillExtractor
-
+from sentence_transformers import SentenceTransformer
 class SkillAnalyzer:
 
     def __init__(self):
@@ -129,7 +129,7 @@ class SkillAnalyzer:
                 
             Returns:
                 Dict[str, Any]: Recommended job roles and their corresponding skill scores.
-        """
+        """ 
         skills = {}
         
         # 1. Process GitHub repositories
