@@ -224,6 +224,17 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - '6333:6333'
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT_ALLOW_RECOVERY_MODE=true
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
