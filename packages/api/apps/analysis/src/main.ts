@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AnalysisModule } from './analysis.module';
 import { ConfigService } from '@nestjs/config';
-import * as compression from "compression";
-import helmet from "helmet";
+import * as compression from 'compression';
+import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
