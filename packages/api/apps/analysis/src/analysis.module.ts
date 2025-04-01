@@ -6,6 +6,10 @@ import { HttpModule } from '@nestjs/axios';
 import { RmqModule } from '@app/common/rmq/rmq.module';
 import { StatsService } from './services/stats/stats.service';
 import { StatsController } from './controller/stats/stats.controller';
+import { SkillsController } from './controller/skills/skills.controller';
+import { SkillsService } from './services/skills/skills.service';
+import { OpenAi as OpenAiService } from './services/open-ai-service/open-ai.service';
+import { SingleStore } from './services/single-store-service.ts/single-store.service';
 @Module({
   imports: [
     LoggerModule,
@@ -22,7 +26,7 @@ import { StatsController } from './controller/stats/stats.controller';
     }),
     RmqModule.register({ name: 'ANALYSIS_SERVICE' }),
   ],
-  controllers: [StatsController],
-  providers: [StatsService],
+  controllers: [StatsController, SkillsController],
+  providers: [StatsService, SkillsService, SingleStore, OpenAiService],
 })
 export class AnalysisModule {}

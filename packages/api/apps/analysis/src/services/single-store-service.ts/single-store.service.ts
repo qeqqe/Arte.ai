@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import mysql from 'mysql2/promise';
+import { createPool } from 'mysql2/promise';
 import { Logger } from 'nestjs-pino';
 import { OnModuleInit } from '@nestjs/common';
-import { OpenAi as OpenAIService } from '../open-ai-service/open-ai.service';
-
+import { OpenAi as OpenAiServiceService } from '../open-ai-service/open-ai.service';
+import { SimilarSkill } from '../../types/skills.types';
+import mysql from 'mysql2/promise';
 interface SkillsData {
   [category: string]: string[];
 }
@@ -19,7 +20,7 @@ export class SingleStore implements OnModuleInit {
   constructor(
     private readonly logger: Logger,
     private readonly configService: ConfigService,
-    private readonly openAIService: OpenAIService,
+    private readonly openAIService: OpenAiServiceService,
   ) {
     this.EMBEDDING_DIMENSION = this.configService.get<number>(
       'EMBEDDING_DIMENSION',
@@ -28,7 +29,7 @@ export class SingleStore implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.pool = mysql.createPool({
+    this.pool = createPool({
       host: this.configService.getOrThrow<string>('SINGLESTORE_HOST'),
       port: this.configService.getOrThrow<number>('SINGLESTORE_PORT'),
       user: this.configService.getOrThrow<string>('SINGLESTORE_USER'),
@@ -88,7 +89,6 @@ export class SingleStore implements OnModuleInit {
             embedding JSON,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE KEY(category, skill),
             INDEX(category),
             INDEX(skill)
           );
@@ -109,7 +109,7 @@ export class SingleStore implements OnModuleInit {
         await connection.query(`
           CREATE TABLE IF NOT EXISTS job_posting (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            job_id VARCHAR(255) UNIQUE,
+            job_id VARCHAR(255),
             posting_text TEXT NOT NULL,
             posting_title VARCHAR(255),
             posting_embedding JSON,
@@ -120,7 +120,7 @@ export class SingleStore implements OnModuleInit {
           );
         `);
 
-        // create vector index
+        // creating vector index
         try {
           this.logger.log(
             `creating vector index with dimension ${this.EMBEDDING_DIMENSION}`,
@@ -207,40 +207,57 @@ export class SingleStore implements OnModuleInit {
 
       this.logger.log(`storing ${allSkills.length} skills in the database`);
 
-      // extract skill texts for batch embedding
-      const skillTexts = allSkills.map((item) => item.skill);
+      // processing in smaller chunks
+      const embeddingBatchSize = 5;
 
-      // generate embeddings in batch
-      const embeddings = await this.openAIService.generateEmbeddingsBatch(
-        skillTexts,
-      );
-
-      // prepare values for batch insert
-      const insertValues = allSkills.map((item, index) => [
-        item.category,
-        item.skill,
-        JSON.stringify(embeddings[index]),
-      ]);
-
-      // insert in smaller batches to avoid packet size limits
-      const batchSize = 100;
-      for (let i = 0; i < insertValues.length; i += batchSize) {
-        const batch = insertValues.slice(i, i + batchSize);
-
-        // execute batch insert with IGNORE to handle duplicates
-        await connection.query(
-          `
-          INSERT IGNORE INTO skill_categories (category, skill, embedding)
-          VALUES ${batch.map(() => '(?, ?, ?)').join(', ')}
-          `,
-          batch.flat(),
-        );
-
+      for (let i = 0; i < allSkills.length; i += embeddingBatchSize) {
+        const embeddingBatch = allSkills.slice(i, i + embeddingBatchSize);
         this.logger.log(
-          `batch ${Math.floor(i / batchSize) + 1} of ${Math.ceil(
-            insertValues.length / batchSize,
-          )} complete`,
+          `Processing embedding batch ${
+            Math.floor(i / embeddingBatchSize) + 1
+          }/${Math.ceil(allSkills.length / embeddingBatchSize)}`,
         );
+
+        try {
+          // skill text in small batch
+          const skillTexts = embeddingBatch.map((item) => item.skill);
+
+          // embeddings in small batch
+          const embeddings = await this.openAIService.generateEmbeddingsBatch(
+            skillTexts,
+          );
+
+          // prepare values for db insertion
+          const insertValues = embeddingBatch.map((item, index) => [
+            item.category,
+            item.skill,
+            JSON.stringify(embeddings[index]),
+          ]);
+
+          // insert these records into the database
+          const placeholders = insertValues.map(() => '(?, ?, ?)').join(', ');
+
+          await connection.query(
+            `INSERT IGNORE INTO skill_categories (category, skill, embedding) VALUES ${placeholders}`,
+            insertValues.flat(),
+          );
+
+          this.logger.log(
+            `Completed embedding batch ${
+              Math.floor(i / embeddingBatchSize) + 1
+            }/${Math.ceil(allSkills.length / embeddingBatchSize)}`,
+          );
+
+          // small delay btwn batches to avoid overwhelming the API rate limits
+          if (i + embeddingBatchSize < allSkills.length) {
+            await new Promise((resolve) => setTimeout(resolve, 250));
+          }
+        } catch (batchError) {
+          this.logger.error(
+            `Error processing batch: ${batchError.message}`,
+            batchError.stack,
+          );
+        }
       }
 
       await connection.commit();
@@ -284,12 +301,18 @@ export class SingleStore implements OnModuleInit {
 
       const insertId = (result as mysql.ResultSetHeader).insertId;
 
-      // if vector index isn't available, store in alternative table
+      // if vector index isn't available, store it in the other table
       if (!this.useVectorIndex) {
-        this.logger.log(`storing vector in alternative table for job ${jobId}`);
+        this.logger.log(`storing vector in other table for job ${jobId}`);
+
+        const safeInsertId = Number(insertId);
+        if (isNaN(safeInsertId) || safeInsertId <= 0) {
+          throw new Error(`Invalid insert ID: ${insertId}`);
+        }
+
         await connection.query(
           'INSERT INTO vector_indexes (vector_id, vector) VALUES (?, ?)',
-          [insertId, JSON.stringify(embedding)],
+          [safeInsertId, JSON.stringify(embedding)],
         );
       }
 
@@ -306,6 +329,59 @@ export class SingleStore implements OnModuleInit {
         error.stack,
       );
       throw new Error(`failed to store job posting: ${error.message}`);
+    } finally {
+      connection.release();
+    }
+  }
+
+  async findSimilarSkills(
+    skillText: string,
+    limit = 10,
+  ): Promise<SimilarSkill[]> {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const embedding = await this.openAIService.generateEmbedding(skillText);
+
+      let rows;
+      if (this.useVectorIndex) {
+        // use built in vector operations
+        [rows] = await connection.query(
+          `
+          SELECT category, skill, DOT_PRODUCT(embedding, ?) AS similarity    
+          FROM skill_categories
+          ORDER BY similarity DESC
+          LIMIT ?
+          `,
+          [JSON.stringify(embedding), limit],
+        );
+      } else {
+        // manual calculation of dot product
+        [rows] = await connection.query(
+          `
+          SELECT 
+            sc.category, 
+            sc.skill,
+            (
+              SELECT SUM(e1 * e2)
+              FROM 
+                JSON_TABLE(sc.embedding, '$[*]' COLUMNS (e1 DOUBLE PATH '$')) AS t1,
+                JSON_TABLE(?, '$[*]' COLUMNS (e2 DOUBLE PATH '$')) AS t2
+              WHERE t1.e1 IS NOT NULL AND t2.e2 IS NOT NULL
+            ) AS similarity
+          FROM skill_categories sc
+          ORDER BY similarity DESC
+          LIMIT ?
+          `,
+          [JSON.stringify(embedding), limit],
+        );
+      }
+
+      return rows as SimilarSkill[];
+    } catch (error) {
+      this.logger.error('error finding similar skills:', error);
+
+      throw new Error(`failed to find similar skills: ${error.message}`);
     } finally {
       connection.release();
     }
