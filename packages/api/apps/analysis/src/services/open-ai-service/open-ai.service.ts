@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import { OnModuleInit } from '@nestjs/common';
-import { SkillsData } from '../../types/skills.types';
+import { SkillsData } from '../../types/skills.types.ts';
 
 @Injectable()
 export class OpenAi implements OnModuleInit {

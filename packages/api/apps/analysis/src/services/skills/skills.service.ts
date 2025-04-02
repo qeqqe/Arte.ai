@@ -1,31 +1,27 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
-import { SkillsData, SimilarSkill } from '../../types/skills.types';
-import { SingleStore } from '../single-store-service.ts/single-store.service';
+import { SkillsData } from '../../types/skills.types';
 import { OpenAi as OpenAiServiceService } from '../open-ai-service/open-ai.service';
+import { DRIZZLE_PROVIDER } from '@app/common';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 @Injectable()
 export class SkillsService {
   constructor(
     private readonly logger: Logger,
-    private readonly singleStoreService: SingleStore,
     private readonly openAiService: OpenAiServiceService,
+    @Inject(DRIZZLE_PROVIDER)
+    private readonly drizzle: NodePgDatabase,
   ) {}
-
-  async initializeDatabase(): Promise<void> {
-    this.logger.log('initializing database');
-    await this.singleStoreService.initialize();
-  }
-
-  async storeSkillsData(skillsData: SkillsData): Promise<void> {
-    this.logger.log('storing skills data');
-    await this.singleStoreService.storeSkillData(skillsData);
-  }
 
   async extractSkills(jobPosting: string): Promise<SkillsData> {
     this.logger.log('extracting skills from job posting');
     try {
-      return await this.openAiService.extractSkills(jobPosting);
+      const response: SkillsData = await this.openAiService.extractSkills(
+        jobPosting,
+      );
+
+      return response;
     } catch (error) {
       this.logger.error(
         `error extracting skills: ${error.message}`,
@@ -33,28 +29,5 @@ export class SkillsService {
       );
       throw new Error(`failed to extract skills: ${error.message}`);
     }
-  }
-
-  async storeJobPosting(
-    jobId: string,
-    postingText: string,
-    postingTitle?: string,
-    extractedSkills?: SkillsData,
-  ): Promise<number> {
-    this.logger.log(`storing job posting with id: ${jobId}`);
-    return this.singleStoreService.storeJobPosting(
-      jobId,
-      postingText,
-      postingTitle,
-      extractedSkills,
-    );
-  }
-
-  async findSimilarSkills(
-    skillText: string,
-    limit = 10,
-  ): Promise<SimilarSkill[]> {
-    this.logger.log(`finding similar skills for "${skillText}"`);
-    return this.singleStoreService.findSimilarSkills(skillText, limit);
   }
 }

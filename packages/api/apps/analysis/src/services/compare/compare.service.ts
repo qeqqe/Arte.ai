@@ -9,7 +9,8 @@ import OpenAI from 'openai';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-
+import { SkillsService } from 'apps/analysis/src/services/skills/skills.service';
+import { linkedinJobs as LinkedInJobs } from '@app/common/jobpost';
 @Injectable()
 export class CompareService {
   private readonly logger = new Logger(CompareService.name);
@@ -23,6 +24,7 @@ export class CompareService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly skillsService: SkillsService,
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase<typeof schema>,
   ) {
@@ -65,13 +67,11 @@ export class CompareService {
         this.getUserSkills(userId),
       ]);
 
-      // generate analysis using gh marketplace models
       const analysisResponse = await this.generateSkillGapAnalysis(
         userProcessedSkills,
         jobInfo.processedSkills,
       );
 
-      // store in cache
       this.storeInCache(cacheKey, analysisResponse);
 
       return analysisResponse;
@@ -123,7 +123,13 @@ export class CompareService {
       this.logger.log(
         `No processed skills found for job ${jobId}, extracting skills`,
       );
-      jobInfo.processedSkills = await this.extractJobSkills(jobId);
+      jobInfo.processedSkills = await this.skillsService.extractSkills(
+        jobInfo.jobInfo,
+      );
+      await this.drizzle
+        .update(LinkedInJobs)
+        .set({ processedSkills: jobInfo.processedSkills } as any)
+        .where(eq(LinkedInJobs.id, jobId));
     }
 
     return jobInfo;
@@ -143,33 +149,6 @@ export class CompareService {
       ),
     );
     this.logger.log(`Job scraping request completed for ${jobId}`);
-  }
-
-  private async extractJobSkills(jobId: string) {
-    const JOB_SKILL_EXTRACTOR_URL = this.configService.getOrThrow<string>(
-      'JOB_SKILL_EXTRACTOR_URL',
-    );
-
-    try {
-      this.logger.log(`Extracting skills from job ${jobId}`);
-      const skillExtractionResponse = await firstValueFrom(
-        this.httpService
-          .get(`${JOB_SKILL_EXTRACTOR_URL}`, {
-            params: { jobId },
-          })
-          .pipe(
-            catchError((error) => {
-              this.logger.error(`Error extracting skills: ${error.message}`);
-              throw new NotFoundException('Failed to extract job skills');
-            }),
-          ),
-      );
-
-      return skillExtractionResponse?.data?.processedSkills || {};
-    } catch (error) {
-      this.logger.warn(`No skills extracted for job ID: ${jobId}`);
-      throw new NotFoundException('No skills found');
-    }
   }
 
   private async getUserSkills(userId: string) {

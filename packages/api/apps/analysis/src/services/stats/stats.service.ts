@@ -1,6 +1,5 @@
 import { DRIZZLE_PROVIDER, UserLeetcodeSchema, users } from '@app/common';
 import { userPinnedRepo } from '@app/common/github';
-import { linkedinJobs as LinkedInJobs } from '@app/common/jobpost';
 import { UserStatResponse } from '@app/dtos/analysis';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
@@ -174,7 +173,7 @@ export class StatsService {
       throw error;
     }
   }
-
+  /*
   async getJobPostInfo(JobId: string): Promise<JSON | typeof Error> {
     try {
       const FetchedlinkedInJob = await this.drizzle
@@ -213,4 +212,5 @@ export class StatsService {
       throw error;
     }
   }
+*/
 }
