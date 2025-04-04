@@ -9,8 +9,8 @@ import OpenAI from 'openai';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { SkillsService } from 'apps/analysis/src/services/skills/skills.service';
 import { linkedinJobs as LinkedInJobs } from '@app/common/jobpost';
+import { OpenAi } from '../open-ai-service/open-ai.service';
 @Injectable()
 export class CompareService {
   private readonly logger = new Logger(CompareService.name);
@@ -24,7 +24,7 @@ export class CompareService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
-    private readonly skillsService: SkillsService,
+    private readonly openAiService: OpenAi,
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase<typeof schema>,
   ) {
@@ -123,7 +123,7 @@ export class CompareService {
       this.logger.log(
         `No processed skills found for job ${jobId}, extracting skills`,
       );
-      jobInfo.processedSkills = await this.skillsService.extractSkills(
+      jobInfo.processedSkills = await this.openAiService.extractSkills(
         jobInfo.jobInfo,
       );
       await this.drizzle
@@ -154,15 +154,23 @@ export class CompareService {
   private async getUserSkills(userId: string) {
     this.logger.log(`Fetching skills for user ${userId}`);
     const userProcessedSkills = await this.drizzle
-      .select({ userProccessedSkills: users.userProccessedSkills })
+      .select({ userProcessedSkills: users.userProcessedSkills })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1)
       .then((rows) => rows[0]);
 
     if (!userProcessedSkills) {
-      this.logger.error(`User not found: ${userId}`);
-      throw new Error(`User with ID ${userId} not found`);
+      try {
+        this.logger.log(`User not found: ${userId}`);
+        await this.openAiService.processUserData(userId);
+      } catch (error) {
+        this.logger.error(
+          `Error processing user data: ${error.message}`,
+          error.stack,
+        );
+        throw new NotFoundException('User information could not be found');
+      }
     }
 
     return userProcessedSkills;

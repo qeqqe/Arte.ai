@@ -19,6 +19,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { IsString, IsNotEmpty } from 'class-validator';
+import { ProcessedLeetcodeStat } from '@app/common/leetcode';
 
 // Define DTOs inline to avoid import issues
 export class LeetcodeUsernameDto {
@@ -35,6 +36,7 @@ export interface LeetcodeFetchResponse {
   hardSolved: number;
   acceptanceRate: number;
   ranking: number;
+  proccessedLeetcodeStat: ProcessedLeetcodeStat;
 }
 
 @ApiTags('leetcode')

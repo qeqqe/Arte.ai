@@ -5,14 +5,14 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
-import { SkillsService } from '../../services/skills/skills.service';
 import { Logger } from 'nestjs-pino';
 import { linkedinJobs as LinkedInJobs } from '@app/common/jobpost';
+import { OpenAi } from '../../services/open-ai-service/open-ai.service';
 
 @Controller('skills')
 export class SkillsController {
   constructor(
-    private readonly skillsService: SkillsService,
+    private readonly openAiService: OpenAi,
     private readonly logger: Logger,
   ) {}
 
@@ -28,7 +28,7 @@ export class SkillsController {
         );
       }
 
-      const extractedSkills = await this.skillsService.extractSkills(jobInfo);
+      const extractedSkills = await this.openAiService.extractSkills(jobInfo);
 
       return {
         jobId: id,

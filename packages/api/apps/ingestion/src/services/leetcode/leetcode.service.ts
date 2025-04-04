@@ -11,9 +11,14 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { UserPayload, DRIZZLE_PROVIDER } from '@app/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { NewUserLeetcode, UserLeetcodeSchema } from '@app/common/leetcode';
+import {
+  NewUserLeetcode,
+  ProcessedLeetcodeStat,
+  UserLeetcodeSchema,
+} from '@app/common/leetcode';
 import { catchError } from 'rxjs/operators';
 import { eq } from 'drizzle-orm';
+import { users } from '@app/common/user';
 
 @Injectable()
 export class LeetcodeService {
@@ -139,6 +144,16 @@ export class LeetcodeService {
 
       const ranking = matchedUser.profile.ranking || 0;
 
+      const proccessedLeetcodeStat = this.proccessLeetcodeStat({
+        totalQuestions,
+        totalSolved,
+        easySolved,
+        mediumSolved,
+        hardSolved,
+        acceptanceRate,
+        ranking,
+      });
+
       try {
         const leetcodeData: NewUserLeetcode = {
           userId: user.id,
@@ -147,6 +162,7 @@ export class LeetcodeService {
           totalQuestions,
           easySolved,
           mediumSolved,
+          proccessedLeetcodeStat,
           hardSolved,
           acceptanceRate,
           ranking,
@@ -171,6 +187,7 @@ export class LeetcodeService {
               totalQuestions,
               easySolved,
               mediumSolved,
+              proccessedLeetcodeStat,
               hardSolved,
               acceptanceRate,
               ranking,
@@ -180,6 +197,9 @@ export class LeetcodeService {
           this.logger.log(`Inserting new LeetCode data for user ${user.id}`);
           await this.drizzle.insert(UserLeetcodeSchema).values(leetcodeData);
         }
+
+        // Update user's processedSkills in the users table
+        await this.updateUserProcessedSkills(user.id, proccessedLeetcodeStat);
 
         this.logger.log(
           `Saved LeetCode data for user ${user.id} with username ${username}`,
@@ -203,6 +223,7 @@ export class LeetcodeService {
         totalQuestions,
         easySolved,
         mediumSolved,
+        proccessedLeetcodeStat,
         hardSolved,
         acceptanceRate,
         ranking,
@@ -227,6 +248,203 @@ export class LeetcodeService {
       throw new InternalServerErrorException(
         `Failed to process LeetCode data: ${err.message}`,
       );
+    }
+  }
+
+  /**
+   * Updates the user's processed skills with LeetCode stats
+   */
+  private async updateUserProcessedSkills(
+    userId: string,
+    leetcodeStats: ProcessedLeetcodeStat,
+  ): Promise<void> {
+    try {
+      // Get current user processed skills
+      const userResult = await this.drizzle
+        .select({ userProcessedSkills: users.userProcessedSkills })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (userResult.length === 0) {
+        this.logger.error(
+          `User ${userId} not found when updating processed skills`,
+        );
+        return;
+      }
+
+      let userSkills = [];
+      try {
+        userSkills = JSON.parse(
+          JSON.stringify(userResult[0].userProcessedSkills),
+        );
+      } catch (e) {
+        userSkills = [];
+      }
+
+      // Check if LeetCode exists in user skills
+      const existingLeetcodeIndex = userSkills.findIndex(
+        (skill) => skill.source === 'leetcode',
+      );
+
+      // Prepare the LeetCode skill entry
+      const leetcodeSkill = {
+        source: 'leetcode',
+        data: leetcodeStats,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Update or add the LeetCode skill
+      if (existingLeetcodeIndex >= 0) {
+        userSkills[existingLeetcodeIndex] = leetcodeSkill;
+      } else {
+        userSkills.push(leetcodeSkill);
+      }
+
+      // Update the user's processed skills
+      await this.drizzle
+        .update(users)
+        .set({
+          userProcessedSkills: userSkills,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId));
+
+      this.logger.log(
+        `Updated user ${userId} processed skills with LeetCode data`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to update user processed skills: ${error.message}`,
+        error.stack,
+      );
+      // We don't want to fail the entire operation if this update fails
+    }
+  }
+
+  proccessLeetcodeStat(leetcodeStat: {
+    totalQuestions: number;
+    totalSolved: number;
+    easySolved: number;
+    mediumSolved: number;
+    hardSolved: number;
+    acceptanceRate: number;
+    ranking: number;
+  }): ProcessedLeetcodeStat {
+    try {
+      const {
+        totalQuestions,
+        totalSolved,
+        easySolved,
+        mediumSolved,
+        hardSolved,
+        acceptanceRate,
+        ranking,
+      } = leetcodeStat;
+
+      if (totalQuestions == 0 || ranking == 0) {
+        return {
+          rating: 0,
+          level: 'Unknown',
+          details: {
+            totalSolved,
+            totalQuestions,
+            easySolved,
+            mediumSolved,
+            hardSolved,
+            acceptanceRate: acceptanceRate * 100,
+            ranking,
+          },
+        };
+      }
+
+      const weightedSolved = easySolved * 1 + mediumSolved * 3 + hardSolved * 6;
+      const logBase = 1.1;
+      const difficulty_scale = 30 * (1 - 1 / logBase ** (weightedSolved / 100));
+
+      const mediumRatio = mediumSolved / Math.max(1, totalSolved);
+      const hardRatio = hardSolved / Math.max(1, totalSolved);
+      const difficultyBonus = mediumRatio * 10 + hardRatio * 15;
+
+      const breadthScale = 20 * (1 - 1 / logBase ** (totalSolved / 50));
+      const breadthScore = Math.min(20, breadthScale);
+
+      const difficultyScore = Math.min(50, difficulty_scale + difficultyBonus);
+
+      const qualityScore = Math.min(15, acceptanceRate * 15);
+
+      let standingScore = 0;
+      if (ranking <= 5000) {
+        standingScore = 15; // top 5K users get full score
+      } else if (ranking <= 50000) {
+        standingScore = 12 + 3 * (1 - (ranking - 5000) / 45000);
+      } else if (ranking <= 200000) {
+        standingScore = 8 + 4 * (1 - (ranking - 50000) / 150000);
+      } else {
+        standingScore = 8 * (1 - Math.min(1, (ranking - 200000) / 800000));
+      }
+
+      let finalScore = Math.round(
+        difficultyScore + breadthScore + qualityScore + standingScore,
+      );
+
+      let level = 'Novice';
+
+      if (finalScore >= 85) {
+        level = 'Expert';
+      } else if (finalScore >= 70) {
+        level = 'Advanced';
+      } else if (finalScore >= 50) {
+        level = 'Intermediate';
+      } else if (finalScore >= 30) {
+        level = 'Beginner';
+      }
+
+      if (totalSolved >= 500 && !['Advanced', 'Expert'].includes(level)) {
+        level = 'Advanced';
+        if (finalScore < 70) {
+          finalScore = 70;
+        }
+      } else if (
+        totalSolved >= 300 &&
+        !['Intermediate', 'Advanced', 'Expert'].includes(level)
+      ) {
+        level = 'Intermediate';
+        if (finalScore < 50) {
+          finalScore = 50;
+        }
+      } else if (totalSolved >= 100 && level === 'Novice') {
+        level = 'Beginner';
+        if (finalScore < 30) {
+          finalScore = 30;
+        }
+      }
+
+      return {
+        rating: finalScore,
+        level: level,
+        details: {
+          totalSolved: totalSolved,
+          totalQuestions: totalQuestions,
+          easySolved: easySolved,
+          mediumSolved: mediumSolved,
+          hardSolved: hardSolved,
+          acceptanceRate: acceptanceRate * 100,
+          ranking: ranking,
+          components: {
+            difficultyScore: Math.round(difficultyScore),
+            breadthScore: Math.round(breadthScore),
+            qualityScore: Math.round(qualityScore),
+            standingScore: Math.round(standingScore),
+          },
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to proccess leetcode data: ${error.message}`,
+        error.stack,
+      );
+      throw error;
     }
   }
 }

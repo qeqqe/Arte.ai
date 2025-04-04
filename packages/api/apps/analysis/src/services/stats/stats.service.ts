@@ -20,25 +20,51 @@ export class StatsService {
   async getUserSkillInfo(userId: string): Promise<any> {
     try {
       this.logger.log(`Fetching stats for user: ${userId}`);
+      const proccessedUserInfo = await this.drizzle
+        .select({
+          user_proccessed_skills: users.userProcessedSkills,
+        })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!proccessedUserInfo[0]) {
+        this.logger.warn(`No processed user info found for user: ${userId}`);
+        try {
+          const userPinnedRepoResults = await this.drizzle
+            .select({ userGithubRepos: userPinnedRepo })
+            .from(userPinnedRepo)
+            .where(eq(userPinnedRepo.userId, userId));
+
+          const fetchResume = await this.drizzle
+            .select({ resume: users.resume })
+            .from(users)
+            .where(eq(users.id, userId));
+
+          const resume: string = fetchResume[0]?.resume || '';
+        } catch (error) {
+          this.logger.error(
+            `Failed to fetch processed user info: ${error.message}`,
+            error.stack,
+          );
+        }
+      }
 
       const leetcodeStatResult = await this.drizzle
         .select()
         .from(UserLeetcodeSchema)
         .where(eq(UserLeetcodeSchema.userId, userId));
 
-      const userPinnedRepoResults = await this.drizzle
-        .select()
-        .from(userPinnedRepo)
-        .where(eq(userPinnedRepo.userId, userId));
+      // const userPinnedRepoResults = await this.drizzle
+      //   .select()
+      //   .from(userPinnedRepo)
+      //   .where(eq(userPinnedRepo.userId, userId));
 
-      const fetchResume = await this.drizzle
-        .select()
-        .from(users)
-        .where(eq(users.id, userId));
+      // const fetchResume = await this.drizzle
+      //   .select()
+      //   .from(users)
+      //   .where(eq(users.id, userId));
 
       const leetcodestat = leetcodeStatResult[0];
-
-      const resume: string = fetchResume[0].resume;
 
       const response: UserStatResponse = {
         leetCodeStat: leetcodestat
@@ -144,14 +170,14 @@ export class StatsService {
             await this.drizzle
               .update(users)
               .set({
-                userProccessedSkills: processedResponse.data.skills,
+                userProcessedSkills: processedResponse.data.skills,
               } as unknown as typeof users.$inferInsert)
               .where(eq(users.id, userId));
 
-            this.logger.log('Successfully updated processed LeetCode stats');
+            this.logger.log('Successfully updated processed User skills');
           } catch (dbError) {
             this.logger.error(
-              `Failed to update processed LeetCode stats: ${dbError.message}`,
+              `Failed to update processed User skills: ${dbError.message}`,
               dbError.stack,
             );
           }
@@ -173,37 +199,20 @@ export class StatsService {
       throw error;
     }
   }
-  /*
-  async getJobPostInfo(JobId: string): Promise<JSON | typeof Error> {
-    try {
-      const FetchedlinkedInJob = await this.drizzle
-        .select()
-        .from(LinkedInJobs)
-        .where(eq(LinkedInJobs.id, JobId));
 
-      if (!FetchedlinkedInJob.length) {
-        this.logger.error(`Job with ID ${JobId} not found`);
-        throw new Error(`Job with ID ${JobId} not found`);
+  private async fetchUserLeetcodeStat(userId: string) {
+    try {
+      const leetcodeStatResult = await this.drizzle
+        .select()
+        .from(UserLeetcodeSchema)
+        .where(eq(UserLeetcodeSchema.userId, userId));
+
+      if (!leetcodeStatResult || leetcodeStatResult.length === 0) {
+        this.logger.warn(`No leetcode info found for user: ${userId}`);
+        return 'User leetcode stats not found!';
       }
 
-      const linkedInJob = FetchedlinkedInJob[0];
-
-      const pythonServiceUrl =
-        this.configService.getOrThrow<string>('PYTHON_URL');
-
-      const processedJobPostingResponse = await this.httpService.axiosRef.post(
-        `${pythonServiceUrl}/extract-job-skill`,
-        { text: linkedInJob.jobInfo },
-      );
-
-      this.logger.log(`Received data from Python service`);
-
-      await this.drizzle
-        .update(LinkedInJobs)
-        .set({ processedSkills: processedJobPostingResponse.data } as any)
-        .where(eq(LinkedInJobs.id, JobId));
-
-      return processedJobPostingResponse.data;
+      return leetcodeStatResult[0].proccessedLeetcodeStat;
     } catch (error) {
       this.logger.error(
         `Failed to fetch user data: ${error.message}`,
@@ -212,5 +221,4 @@ export class StatsService {
       throw error;
     }
   }
-*/
 }
