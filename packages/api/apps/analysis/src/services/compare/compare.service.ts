@@ -11,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { linkedinJobs as LinkedInJobs } from '@app/common/jobpost';
 import { OpenAi } from '../open-ai-service/open-ai.service';
+import { StatsService } from '../stats/stats.service';
 @Injectable()
 export class CompareService {
   private readonly logger = new Logger(CompareService.name);
@@ -24,6 +25,7 @@ export class CompareService {
   constructor(
     private readonly configService: ConfigService,
     private readonly httpService: HttpService,
+    private readonly statService: StatsService,
     private readonly openAiService: OpenAi,
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase<typeof schema>,
@@ -163,7 +165,7 @@ export class CompareService {
     if (!userProcessedSkills) {
       try {
         this.logger.log(`User not found: ${userId}`);
-        await this.openAiService.processUserData(userId);
+        await this.statService.getUserSkillInfo(userId);
       } catch (error) {
         this.logger.error(
           `Error processing user data: ${error.message}`,

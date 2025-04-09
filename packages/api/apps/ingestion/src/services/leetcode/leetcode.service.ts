@@ -18,7 +18,6 @@ import {
 } from '@app/common/leetcode';
 import { catchError } from 'rxjs/operators';
 import { eq } from 'drizzle-orm';
-import { users } from '@app/common/user';
 
 @Injectable()
 export class LeetcodeService {
@@ -197,10 +196,6 @@ export class LeetcodeService {
           this.logger.log(`Inserting new LeetCode data for user ${user.id}`);
           await this.drizzle.insert(UserLeetcodeSchema).values(leetcodeData);
         }
-
-        // Update user's processedSkills in the users table
-        await this.updateUserProcessedSkills(user.id, proccessedLeetcodeStat);
-
         this.logger.log(
           `Saved LeetCode data for user ${user.id} with username ${username}`,
         );
@@ -248,77 +243,6 @@ export class LeetcodeService {
       throw new InternalServerErrorException(
         `Failed to process LeetCode data: ${err.message}`,
       );
-    }
-  }
-
-  /**
-   * Updates the user's processed skills with LeetCode stats
-   */
-  private async updateUserProcessedSkills(
-    userId: string,
-    leetcodeStats: ProcessedLeetcodeStat,
-  ): Promise<void> {
-    try {
-      // Get current user processed skills
-      const userResult = await this.drizzle
-        .select({ userProcessedSkills: users.userProcessedSkills })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (userResult.length === 0) {
-        this.logger.error(
-          `User ${userId} not found when updating processed skills`,
-        );
-        return;
-      }
-
-      let userSkills = [];
-      try {
-        userSkills = JSON.parse(
-          JSON.stringify(userResult[0].userProcessedSkills),
-        );
-      } catch (e) {
-        userSkills = [];
-      }
-
-      // Check if LeetCode exists in user skills
-      const existingLeetcodeIndex = userSkills.findIndex(
-        (skill) => skill.source === 'leetcode',
-      );
-
-      // Prepare the LeetCode skill entry
-      const leetcodeSkill = {
-        source: 'leetcode',
-        data: leetcodeStats,
-        updatedAt: new Date().toISOString(),
-      };
-
-      // Update or add the LeetCode skill
-      if (existingLeetcodeIndex >= 0) {
-        userSkills[existingLeetcodeIndex] = leetcodeSkill;
-      } else {
-        userSkills.push(leetcodeSkill);
-      }
-
-      // Update the user's processed skills
-      await this.drizzle
-        .update(users)
-        .set({
-          userProcessedSkills: userSkills,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.id, userId));
-
-      this.logger.log(
-        `Updated user ${userId} processed skills with LeetCode data`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to update user processed skills: ${error.message}`,
-        error.stack,
-      );
-      // We don't want to fail the entire operation if this update fails
     }
   }
 
