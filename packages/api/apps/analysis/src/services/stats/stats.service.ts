@@ -21,75 +21,88 @@ export class StatsService {
   async getUserSkillInfo(userId: string): Promise<any> {
     try {
       this.logger.log(`Fetching stats for user: ${userId}`);
-      const proccessedUserInfo = await this.drizzle
+
+      const userResult = await this.drizzle
         .select({
-          user_proccessed_skills: users.userProcessedSkills,
+          userProcessedSkills: users.userProcessedSkills,
         })
         .from(users)
-        .where(eq(users.id, userId));
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      const userProcessedSkills = userResult[0]?.userProcessedSkills;
 
       if (
-        !proccessedUserInfo[0] ||
-        !proccessedUserInfo[0].user_proccessed_skills ||
-        (Array.isArray(proccessedUserInfo[0].user_proccessed_skills) &&
-          proccessedUserInfo[0].user_proccessed_skills.length === 0)
+        userProcessedSkills &&
+        typeof userProcessedSkills === 'object' &&
+        Object.keys(userProcessedSkills).length > 0
       ) {
-        this.logger.warn(`No processed user info found for user: ${userId}`);
-        try {
-          const FetcheduserPinnedRepoResults = await this.drizzle
-            .select({ userGithubRepos: userPinnedRepo })
-            .from(userPinnedRepo)
-            .where(eq(userPinnedRepo.userId, userId));
+        this.logger.log(`Found existing processed skills for user: ${userId}`);
+        return userProcessedSkills;
+      }
 
-          const userPinnedRepoResults = FetcheduserPinnedRepoResults.map(
-            (item) => item.userGithubRepos,
-          );
+      this.logger.log(
+        `No valid processed skills found, generating for user: ${userId}`,
+      );
 
-          const mappeduserPinnedRepoResults = userPinnedRepoResults.map(
-            (repo) => ({
-              description: repo.description,
-              stargazerCount: repo.stargazerCount,
-              forkCount: repo.forkCount,
-              repositoryTopics: repo.repositoryTopics,
-              readme: repo.readme,
-              languages: repo.languages,
-            }),
-          );
+      try {
+        const FetcheduserPinnedRepoResults = await this.drizzle
+          .select({ userGithubRepos: userPinnedRepo })
+          .from(userPinnedRepo)
+          .where(eq(userPinnedRepo.userId, userId));
 
-          const fetchResume = await this.drizzle
-            .select({ resume: users.resume })
-            .from(users)
-            .where(eq(users.id, userId));
-          const resume: string = fetchResume[0]?.resume || '';
+        const userPinnedRepoResults = FetcheduserPinnedRepoResults.map(
+          (item) => item.userGithubRepos,
+        );
 
-          const userProcessedLeetcodeStat = await this.fetchUserLeetcodeStat(
-            userId,
-          );
+        const mappeduserPinnedRepoResults = userPinnedRepoResults.map(
+          (repo) => ({
+            description: repo.description,
+            stargazerCount: repo.stargazerCount,
+            forkCount: repo.forkCount,
+            repositoryTopics: repo.repositoryTopics,
+            readme: repo.readme,
+            languages: repo.languages,
+          }),
+        );
 
-          const response = this.openAiService.proccessUserInfo(
-            mappeduserPinnedRepoResults,
-            resume,
-            userProcessedLeetcodeStat,
-          );
-          if (!response) {
-            this.logger.warn(`No response from OpenAI for user: ${userId}`);
-            return;
-          }
+        const fetchResume = await this.drizzle
+          .select({ resume: users.resume })
+          .from(users)
+          .where(eq(users.id, userId));
+        const resume: string = fetchResume[0]?.resume || '';
 
-          await this.drizzle
-            .update(users)
-            .set({
-              userProcessedSkills: response,
-            } as any)
-            .where(eq(users.id, userId));
-          this.logger.log('Updated the proccessed file for the users  ');
-          return response;
-        } catch (error) {
-          this.logger.error(
-            `Failed to fetch processed user info: ${error.message}`,
-            error.stack,
-          );
+        const userProcessedLeetcodeStat = await this.fetchUserLeetcodeStat(
+          userId,
+        );
+
+        const response = await this.openAiService.proccessUserInfo(
+          mappeduserPinnedRepoResults,
+          resume,
+          userProcessedLeetcodeStat,
+        );
+
+        if (!response) {
+          this.logger.warn(`No response from OpenAI for user: ${userId}`);
+          return null;
         }
+
+        this.logger.log(`Storing processed skills for user: ${userId}`);
+
+        await this.drizzle
+          .update(users)
+          .set({
+            userProcessedSkills: response,
+          })
+          .where(eq(users.id, userId));
+
+        return response;
+      } catch (error) {
+        this.logger.error(
+          `Failed to generate processed user info: ${error.message}`,
+          error.stack,
+        );
+        throw error;
       }
     } catch (error) {
       this.logger.error(
@@ -98,13 +111,6 @@ export class StatsService {
       );
       return { skills: {}, error: error.message };
     }
-  }
-  catch(error) {
-    this.logger.error(
-      `Failed to fetch user data: ${error.message}`,
-      error.stack,
-    );
-    throw error;
   }
 
   private async fetchUserLeetcodeStat(userId: string): Promise<any> {
