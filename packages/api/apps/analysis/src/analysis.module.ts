@@ -7,9 +7,9 @@ import { RmqModule } from '@app/common/rmq/rmq.module';
 import { StatsService } from './services/stats/stats.service';
 import { StatsController } from './controller/stats/stats.controller';
 import { SkillsController } from './controller/skills/skills.controller';
-import { SkillsService } from './services/skills/skills.service';
 import { OpenAi as OpenAiService } from './services/open-ai-service/open-ai.service';
-import { SingleStore } from './services/single-store-service.ts/single-store.service';
+import { CompareService } from './services/compare/compare.service';
+import { CompareController } from './controller/compare/compare.controller';
 @Module({
   imports: [
     LoggerModule,
@@ -26,7 +26,7 @@ import { SingleStore } from './services/single-store-service.ts/single-store.ser
     }),
     RmqModule.register({ name: 'ANALYSIS_SERVICE' }),
   ],
-  controllers: [StatsController, SkillsController],
-  providers: [StatsService, SkillsService, SingleStore, OpenAiService],
+  controllers: [StatsController, SkillsController, CompareController],
+  providers: [StatsService, OpenAiService, CompareService],
 })
 export class AnalysisModule {}

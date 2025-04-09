@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1742548470714,
-      "tag": "0000_shallow_gunslinger",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1742549829387,
-      "tag": "0001_gifted_deadpool",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1742731108495,
-      "tag": "0002_powerful_tomorrow_man",
+      "when": 1743696564091,
+      "tag": "0000_acoustic_micromax",
       "breakpoints": true
     }
   ]

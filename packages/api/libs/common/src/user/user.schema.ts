@@ -10,7 +10,7 @@ export const users = pgTable('users', {
   resume: text('resume'),
   refreshToken: text('refresh_token').unique(),
   lastLogin: timestamp('last_login').defaultNow().notNull(),
-  userProccessedSkills: jsonb('user_proccessed_skills').notNull().default('[]'),
+  userProcessedSkills: jsonb('user_proccessed_skills').notNull().default('[]'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

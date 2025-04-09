@@ -1,1 +1,5 @@
-export { NewUserLeetcode, UserLeetcodeSchema } from './leetcode.schema';
+export {
+  NewUserLeetcode,
+  UserLeetcodeSchema,
+  ProcessedLeetcodeStat,
+} from './leetcode.schema';

@@ -8,6 +8,27 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from '../user';
 import { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+
+export interface ProcessedLeetcodeStat {
+  rating: number;
+  level: string;
+  details: {
+    totalSolved: number;
+    totalQuestions: number;
+    easySolved: number;
+    mediumSolved: number;
+    hardSolved: number;
+    acceptanceRate: number;
+    ranking: number;
+    components?: {
+      difficultyScore: number;
+      breadthScore: number;
+      qualityScore: number;
+      standingScore: number;
+    };
+  };
+}
+
 export const UserLeetcodeSchema = pgTable('user_leetcode_schema', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
@@ -22,8 +43,8 @@ export const UserLeetcodeSchema = pgTable('user_leetcode_schema', {
   acceptanceRate: integer('acceptance_rate').notNull(),
   ranking: integer('ranking').notNull(),
   proccessedLeetcodeStat: jsonb('proccessed_leetcode_stat')
-    .notNull()
-    .default('[]'),
+    .$type<ProcessedLeetcodeStat>()
+    .notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

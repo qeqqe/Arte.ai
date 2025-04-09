@@ -18,15 +18,11 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@app/common": [
-        "libs/common/src"
-      ],
-      "@app/common/*": [
-        "libs/common/src/*"
-      ],
-      "@app/dtos/*": [
-        "libs/dtos/src/*"
-      ]
+      "@app/common": ["libs/common/src"],
+      "@app/common/*": ["libs/common/src/*"],
+      "@app/dtos/*": ["libs/dtos/src/*"],
+      "@app/redis": ["libs/common/src/redis/src"],
+      "@app/redis/*": ["libs/common/src/redis/src/*"]
     }
   }
 }

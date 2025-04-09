@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
-import { CompareService } from '../../service/compare/compare.service';
+import { CompareService } from '../../services/compare/compare.service';
 import { JwtAuthGuard, UserPayload } from '@app/common';
 import { Request } from 'express';
 
