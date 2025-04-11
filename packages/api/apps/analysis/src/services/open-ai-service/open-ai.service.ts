@@ -21,29 +21,6 @@ export class OpenAi implements OnModuleInit {
     });
   }
 
-  async generateEmbedding(text: string): Promise<number[]> {
-    try {
-      this.logger.log(`generating embedding for text of length ${text.length}`);
-      const startTime = Date.now();
-
-      const response = await this.client.embeddings.create({
-        model: this.configService.get<string>(
-          'EMBED_MODEL',
-          'text-embedding-3-large',
-        ),
-        input: text,
-      });
-
-      this.logger.log(`embedding generated in ${Date.now() - startTime}ms`);
-      return response.data[0].embedding;
-    } catch (error) {
-      this.logger.error(
-        `embedding generation error: ${error.message}`,
-        error.stack,
-      );
-    }
-  }
-
   async extractSkills(jobPosting: string): Promise<SkillsData> {
     try {
       const response = await this.client.chat.completions.create({
@@ -73,6 +50,7 @@ export class OpenAi implements OnModuleInit {
             - web_servers_proxies
             - other_technologies_concepts
             - brief_job_description
+            - other_relevent_info
             
             Format your response as a valid JSON object with these category names as keys and arrays of string values.
             If a category has no skills, provide an empty array.`,
@@ -87,9 +65,14 @@ export class OpenAi implements OnModuleInit {
 
       const content = response.choices[0].message.content;
       if (!content) {
+        this.logger.error(
+          `Falied to proccess the result for the job post ${jobPosting.slice(
+            20,
+          )}`,
+        );
         throw new Error('no content returned from OpenAI');
       }
-
+      this.logger.log(`Proccessed job analysis: \n ${content}`);
       return JSON.parse(content) as SkillsData;
     } catch (error) {
       this.logger.error(

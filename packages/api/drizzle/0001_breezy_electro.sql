@@ -1,0 +1,1 @@
+ALTER TABLE "linkedin_jobs" ALTER COLUMN "processed_skills" DROP DEFAULT;

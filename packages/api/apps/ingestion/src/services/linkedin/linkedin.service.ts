@@ -12,6 +12,8 @@ import { AxiosError } from 'axios';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_PROVIDER } from '@app/common';
 import { linkedinJobs, userFetchedJobs } from '@app/common/jobpost';
+import { OpenAi } from 'apps/analysis/src/services/open-ai-service/open-ai.service';
+import { SkillsData } from 'apps/analysis/src/types/skills.types';
 
 @Injectable()
 export class LinkedinService {
@@ -19,12 +21,13 @@ export class LinkedinService {
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly openAiService: OpenAi,
     private readonly configService: ConfigService,
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase,
   ) {}
 
-  async scrapeJob(jobId: string, userId: string): Promise<string> {
+  async scrapeJob(jobId: string, userId: string): Promise<SkillsData> {
     try {
       const PYTHON_API_URL =
         this.configService.getOrThrow<string>('PYTHON_URL');
@@ -61,9 +64,13 @@ export class LinkedinService {
       }
 
       const jobContent = resp.data.md as string;
-      await this.storeJobPost(jobId, jobContent, userId);
 
-      return jobContent;
+      const processedJobData: SkillsData =
+        await this.openAiService.extractSkills(jobContent);
+
+      await this.storeJobPost(jobId, jobContent, processedJobData, userId);
+
+      return processedJobData;
     } catch (err) {
       this.logger.error(`Error in scrapeJob: ${err.message}`);
       if (
@@ -79,6 +86,7 @@ export class LinkedinService {
   private async storeJobPost(
     linkedinJobId: string,
     jobInfo: string,
+    processedJobData: SkillsData,
     userId: string,
   ): Promise<void> {
     try {
@@ -93,12 +101,14 @@ export class LinkedinService {
           .insert(linkedinJobs)
           .values({
             linkedinJobId,
+            processedSkills: processedJobData as unknown as JSON,
             jobInfo,
           })
           .onConflictDoUpdate({
             target: linkedinJobs.linkedinJobId,
             set: {
               jobInfo,
+              processedSkills: processedJobData as unknown as JSON,
             },
           })
           .returning();

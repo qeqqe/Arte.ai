@@ -14,9 +14,7 @@ export const linkedinJobs = pgTable('linkedin_jobs', {
   linkedinJobId: text('linkedin_job_id').notNull().unique(),
   jobInfo: text('job_info').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  processedSkills: jsonb('processed_skills')
-    .notNull()
-    .default('{"message": "no data"}'),
+  processedSkills: jsonb('processed_skills').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 export const userJobPostRelation = relations(linkedinJobs, ({ many }) => ({

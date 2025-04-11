@@ -65,7 +65,7 @@ export class CompareService {
     try {
       // fetch job and user data in parallel
       const [jobInfo, userProcessedSkills] = await Promise.all([
-        this.getJobInfo(jobId),
+        this.getJobInfo(userId, jobId),
         this.getUserSkills(userId),
       ]);
 
@@ -86,7 +86,7 @@ export class CompareService {
     }
   }
 
-  private async getJobInfo(jobId: string) {
+  private async getJobInfo(jobId: string, userId: string) {
     // get job data from database
     let jobInfo = await this.drizzle
       .select({
@@ -103,7 +103,7 @@ export class CompareService {
       this.logger.log(
         `Job info not found, scraping job details for jobId ${jobId}`,
       );
-      await this.scrapeJobInfo(jobId);
+      await this.scrapeJobInfo(userId, jobId);
 
       jobInfo = await this.drizzle
         .select({
@@ -137,13 +137,13 @@ export class CompareService {
     return jobInfo;
   }
 
-  private async scrapeJobInfo(jobId: string): Promise<void> {
+  private async scrapeJobInfo(userId: string, jobId: string): Promise<void> {
     const JOB_SCRAPE_URL =
       this.configService.getOrThrow<string>('JOB_SCRAPER_URL');
 
     this.logger.log(`Requesting job scraping from ${JOB_SCRAPE_URL}`);
     await firstValueFrom(
-      this.httpService.post(JOB_SCRAPE_URL, { jobId }).pipe(
+      this.httpService.post(JOB_SCRAPE_URL, { userId, jobId }).pipe(
         catchError((error) => {
           this.logger.error(`Error scraping job: ${error.message}`);
           throw new NotFoundException('Failed to retrieve job information');

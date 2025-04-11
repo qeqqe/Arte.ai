@@ -23,6 +23,7 @@ import { RmqModule } from '@app/common/rmq/rmq.module';
 import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './controllers/health/health.controller';
 import { TestController } from './test.controller';
+import { OpenAi } from 'apps/analysis/src/services/open-ai-service/open-ai.service';
 
 @Module({
   imports: [
@@ -42,8 +43,12 @@ import { TestController } from './test.controller';
         RABBITMQ_URI: Joi.string().required(),
         HTTP_PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
+        PYTHON_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         DATABASE_URL: Joi.string().required(),
+        OPENAI_API_KEY: Joi.string().required(),
+        ALLOWED_ORIGINS: Joi.string().required(),
+        JOB_SCRAPER_URL: Joi.string().required(),
       }),
     }),
     RmqModule.register({ name: 'INGESTION_SERVICE' }),
@@ -64,6 +69,7 @@ import { TestController } from './test.controller';
     ResumeService,
     LeetcodeService,
     DrizzleProvider,
+    OpenAi,
     {
       provide: DRIZZLE_PROVIDER,
       useFactory: async (drizzleProvider: DrizzleProvider) => {
