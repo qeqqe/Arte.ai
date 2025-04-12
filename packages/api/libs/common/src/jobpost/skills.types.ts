@@ -1,25 +1,25 @@
 export interface SkillsData {
   languages: string[];
   frontend_frameworks_libraries: string[];
-  frontend_styling_ui: any[];
+  frontend_styling_ui: string[];
   backend_frameworks_runtime: string[];
   databases_datastores: string[];
-  database_tools_orms: any[];
+  database_tools_orms: string[];
   cloud_platforms: string[];
-  devops_cicd: any[];
-  infrastructure_as_code_config: any[];
-  monitoring_observability: any[];
-  ai_ml_datascience: any[];
-  mobile_development: any[];
-  testing_quality: any[];
+  devops_cicd: string[];
+  infrastructure_as_code_config: string[];
+  monitoring_observability: string[];
+  ai_ml_datascience: string[];
+  mobile_development: string[];
+  testing_quality: string[];
   apis_communication: string[];
   architecture_design_patterns: string[];
-  security: any[];
+  security: string[];
   methodologies_collaboration: string[];
-  operating_systems: any[];
-  web_servers_proxies: any[];
+  operating_systems: string[];
+  web_servers_proxies: string[];
   other_technologies_concepts: string[];
-  brief_job_description: string;
+  brief_job_description: string[];
   other_relevent_info: string[];
 }
 

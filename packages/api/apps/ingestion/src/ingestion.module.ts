@@ -8,7 +8,7 @@ import {
   DRIZZLE_PROVIDER,
   DrizzleProvider,
 } from '@app/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import * as Joi from 'joi';
 import { GithubController } from './controllers/github/github.controller';
@@ -24,6 +24,7 @@ import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './controllers/health/health.controller';
 import { TestController } from './test.controller';
 import { OpenAi } from 'apps/analysis/src/services/open-ai-service/open-ai.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -52,6 +53,30 @@ import { OpenAi } from 'apps/analysis/src/services/open-ai-service/open-ai.servi
       }),
     }),
     RmqModule.register({ name: 'INGESTION_SERVICE' }),
+    ClientsModule.registerAsync([
+      {
+        name: 'ANALYSIS_SERVICE',
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>(
+                'RABBITMQ_URI',
+                'amqp://guest:guest@rabbitmq:5672',
+              ),
+            ],
+            queue: configService.get<string>(
+              'ANALYSIS_QUEUE_NAME',
+              'ANALYSIS_QUEUE',
+            ),
+            queueOptions: {
+              durable: true,
+            },
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [
     IngestionController,

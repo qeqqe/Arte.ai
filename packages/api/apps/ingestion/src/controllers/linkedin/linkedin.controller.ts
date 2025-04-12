@@ -1,16 +1,16 @@
 import {
-  Body,
   Controller,
   Get,
   NotFoundException,
-  Post,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { LinkedinService } from '../../services/linkedin/linkedin.service';
 import { JwtAuthGuard, UserPayload } from '@app/common';
-import { SkillsData } from 'apps/analysis/src/types/skills.types';
+import { SkillsData } from '@app/common/jobpost/skills.types';
+import { MessagePattern } from '@nestjs/microservices';
+import { ScrapeJobMicroserviceDto } from '@app/dtos/linkedin';
 
 @Controller('linkedin')
 export class LinkedinController {
@@ -26,9 +26,9 @@ export class LinkedinController {
     const jobDetails = await this.linkedinService.scrapeJob(jobId, user.id);
     return jobDetails;
   }
-  // this one for other microservices to extract the job details if they aren't already
-  @Post('scrape-job-microservice')
-  async scrapeJobMicroservice(@Body() jobId: string, @Body() userId: string) {
-    return this.linkedinService.scrapeJob(jobId, userId);
+
+  @MessagePattern('scrape_job')
+  async scrapeJobMicroservice(data: ScrapeJobMicroserviceDto) {
+    return this.linkedinService.scrapeJob(data.jobId, data.userId);
   }
 }

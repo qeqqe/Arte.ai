@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import { OnModuleInit } from '@nestjs/common';
-import { SkillsData } from '../../types/skills.types';
+import { SkillsData } from '@app/common/jobpost/skills.types';
 
 @Injectable()
 export class OpenAi implements OnModuleInit {
@@ -22,6 +22,15 @@ export class OpenAi implements OnModuleInit {
   }
 
   async extractSkills(jobPosting: string): Promise<SkillsData> {
+    if (
+      !jobPosting ||
+      typeof jobPosting !== 'string' ||
+      jobPosting.trim() === ''
+    ) {
+      this.logger.error('Empty or invalid job posting received');
+      throw new Error('Empty or invalid job posting');
+    }
+
     try {
       const response = await this.client.chat.completions.create({
         model: this.configService.get<string>('MODEL', 'gpt-4o'),
@@ -66,20 +75,23 @@ export class OpenAi implements OnModuleInit {
       const content = response.choices[0].message.content;
       if (!content) {
         this.logger.error(
-          `Falied to proccess the result for the job post ${jobPosting.slice(
+          `Failed to process the result for the job post ${jobPosting.slice(
+            0,
             20,
-          )}`,
+          )}...`,
         );
-        throw new Error('no content returned from OpenAI');
+        throw new Error('No content returned from OpenAI');
       }
-      this.logger.log(`Proccessed job analysis: \n ${content}`);
+
+      // Only log on successful completion
+      this.logger.log(`Processed job analysis successfully`);
       return JSON.parse(content) as SkillsData;
     } catch (error) {
       this.logger.error(
-        `error extracting skills: ${error.message}`,
+        `Error extracting skills: ${error.message}`,
         error.stack,
       );
-      throw new Error(`failed to extract skills: ${error.message}`);
+      throw new Error(`Failed to extract skills: ${error.message}`);
     }
   }
 
@@ -189,5 +201,95 @@ export class OpenAi implements OnModuleInit {
 
   Based on this data, create a detailed profile of this developer.
 `;
+  }
+
+  async generateSkillGapAnalysis(
+    candidateSkills: any,
+    jobRequirements: any,
+    additionalContext?: string,
+  ): Promise<string> {
+    this.logger.debug('Sending request to GitHub marketplace models');
+    const model = this.configService.get<string>('GITHUB_MODEL', 'gpt-4o-mini');
+
+    try {
+      const prompt = this.buildSkillGapPrompt(
+        candidateSkills,
+        jobRequirements,
+        additionalContext,
+      );
+
+      this.logger.debug(`Using model: ${model}`);
+      const response = await this.client.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a skilled career advisor and technical skills expert.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 2000,
+        top_p: 1,
+      });
+
+      if (!response.choices || !response.choices[0]?.message?.content) {
+        throw new Error('Invalid response from GitHub AI model');
+      }
+
+      this.logger.debug('Successfully received response from model');
+      return response.choices[0].message.content;
+    } catch (error) {
+      this.logger.error(
+        `Error in generateSkillGapAnalysis: ${error.message}`,
+        error.stack,
+      );
+      if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+        throw new Error('Model request timed out. Please try again.');
+      } else if (error.name === 'RateLimitError') {
+        throw new Error('API rate limit exceeded. Please try again later.');
+      }
+      throw error;
+    }
+  }
+
+  private buildSkillGapPrompt(
+    candidateSkills: any,
+    jobRequirements: any,
+    additionalContext?: string,
+  ): string {
+    return `
+      I need a detailed analysis of the skill gap between a candidate and job requirements.
+      
+      ## CANDIDATE SKILLS
+      ${JSON.stringify(candidateSkills, null, 2)}
+      
+      ## JOB REQUIREMENTS
+      ${JSON.stringify(jobRequirements, null, 2)}
+      
+      ${
+        additionalContext ? `## ADDITIONAL CONTEXT\n${additionalContext}\n` : ''
+      }
+      
+      Please provide:
+      1. A skill gap analysis with match percentage for each required skill
+      2. Overall suitability score (0-100)
+      3. Specific recommendations for skills to develop
+      4. Estimated time to close each skill gap
+      5. Suggested learning resources for each missing skill
+      
+      Format the response as JSON with the following structure:
+      {
+        "matchedSkills": [...],
+        "gapAnalysis": [...],
+        "overallScore": number,
+        "recommendations": [...],
+        "insights": "string"
+      }
+    `;
   }
 }

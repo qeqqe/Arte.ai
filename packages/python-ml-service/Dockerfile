@@ -15,18 +15,16 @@ RUN apt-get update && apt-get install -y \
     libnss3-dev \
     libxss-dev \
     libasound2 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# no need for this
-# RUN playwright install-deps
-# RUN playwright install chromium
-
-# Don't copy application code in development
-# It will be mounted as a volume
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5000/health || exit 1
 
 EXPOSE 5000
 

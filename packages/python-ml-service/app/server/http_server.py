@@ -1,14 +1,15 @@
-from fastapi import FastAPI, UploadFile, HTTPException, Request
+from fastapi import FastAPI, UploadFile, HTTPException, File
 from fastapi.middleware.cors import CORSMiddleware
 from ..services.pdf_service import PDFService
 from ..services.job_scraper import JobScraper
 import logging
-import json
+from fastapi.responses import JSONResponse
 
 def create_app() -> FastAPI:
     app = FastAPI()
     pdf_service = PDFService()
     job_scraper = JobScraper()
+    
     logger = logging.getLogger(__name__)
     
     app.add_middleware(
@@ -24,7 +25,7 @@ def create_app() -> FastAPI:
         return {"status": "healthy"}
 
     @app.post("/parse-pdf")
-    async def parse_pdf(file: UploadFile):
+    async def parse_pdf(file: UploadFile = File(...)):
         if not file.filename.endswith('.pdf'):
             raise HTTPException(400, "File must be a PDF")
         
@@ -36,26 +37,22 @@ def create_app() -> FastAPI:
         }
 
     @app.get("/scrape-job")
-    async def scrape_job(request: Request):
-        query_params = dict(request.query_params)
-        logger.info(f"Received request with query params: {query_params}")
-        
-        # Extract jobId from query parameters
-        jobId = query_params.get('jobId')
-        logger.info(f"Extracted job ID: {jobId}")
-        
+    async def scrape_job(jobId: str):
         if not jobId:
-            logger.error("No job ID provided in request")
-            raise HTTPException(400, "Job ID is required")
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Job ID is required"}
+            )
         
         try:
-            logger.info(f"Calling job_scraper.scrape with job ID: {jobId}")
+            logger.info(f"Scraping job with ID: {jobId}")
             job_data = await job_scraper.scrape(jobId)
-            logger.info(f"Scraper returned: {job_data}")
             return job_data
         except Exception as e:
             logger.error(f"Error scraping job: {str(e)}")
-            raise HTTPException(500, f"Failed to scrape job: {str(e)}")
-
+            return JSONResponse(
+                status_code=500,
+                content={"error": f"Failed to scrape job: {str(e)}"}
+            )
 
     return app
