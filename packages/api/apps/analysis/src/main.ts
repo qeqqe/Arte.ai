@@ -3,14 +3,14 @@ import { AnalysisModule } from './analysis.module';
 import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-
+import * as cookieParser from 'cookie-parser';
 async function bootstrap() {
   const app = await NestFactory.create(AnalysisModule);
   const configService = app.get<ConfigService>(ConfigService);
   const logger = app.get<Logger>(Logger);
 
   app.useLogger(logger);
-
+  app.use(cookieParser());
   // Connecting to RMQ with consistent settings
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,

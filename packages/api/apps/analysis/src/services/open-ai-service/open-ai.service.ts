@@ -212,7 +212,7 @@ export class OpenAi implements OnModuleInit {
           {
             role: 'system',
             content:
-              'You are a skilled career advisor and technical skills expert.',
+              'You are a skilled career advisor and technical skills expert. ALSO PROVIDE ALL THE RESPONSE UNDER 2000 TOKENS',
           },
           {
             role: 'user',
@@ -222,6 +222,7 @@ export class OpenAi implements OnModuleInit {
         temperature: 0.2,
         max_tokens: 2000,
         top_p: 1,
+        response_format: { type: 'json_object' },
       });
 
       if (!response.choices || !response.choices[0]?.message?.content) {

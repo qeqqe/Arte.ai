@@ -6,7 +6,6 @@ import { HttpModule } from '@nestjs/axios';
 import { RmqModule, RmqService } from '@app/common/rmq';
 import { StatsService } from './services/stats/stats.service';
 import { StatsController } from './controller/stats/stats.controller';
-import { SkillsController } from './controller/skills/skills.controller';
 import { CompareService } from './services/compare/compare.service';
 import { CompareController } from './controller/compare/compare.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -53,12 +52,7 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
       },
     ]),
   ],
-  controllers: [
-    StatsController,
-    SkillsController,
-    CompareController,
-    OpenAiController,
-  ],
+  controllers: [StatsController, CompareController, OpenAiController],
   providers: [StatsService, CompareService, OpenAi, RmqService],
 })
 export class AnalysisModule {}
