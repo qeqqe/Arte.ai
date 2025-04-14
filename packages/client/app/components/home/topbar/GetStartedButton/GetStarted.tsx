@@ -12,7 +12,7 @@ const GetStarted = () => {
       className="group relative flex items-center gap-2 px-5 py-2.5 rounded-lg overflow-hidden bg-slate-800 text-white hover:bg-slate-700 transition-all duration-300"
     >
       {/* Animated background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
 
       {/* Button content */}
       <span className="relative z-10 text-sm font-medium">Get Started</span>
