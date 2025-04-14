@@ -6,15 +6,13 @@ import {
   Inject,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom, catchError, throwError, timer, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
-import { AxiosError } from 'axios';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_PROVIDER } from '@app/common';
 import { linkedinJobs, userFetchedJobs } from '@app/common/jobpost';
 import { SkillsData } from '@app/common/jobpost/skills.types';
 import { ClientProxy } from '@nestjs/microservices';
-import { retryWhen, mergeMap, take } from 'rxjs/operators';
 
 @Injectable()
 export class LinkedinService {
@@ -42,11 +40,9 @@ export class LinkedinService {
       try {
         this.logger.log('Sending job content to analysis service');
 
-        // Use emit instead of send - event-based instead of request/response
-        await this.analysisService.emit('extract_skills', jobContent);
-
-        // Direct processing using OpenAI service
-        const processedJobData = await this.processJobContent(jobContent);
+        const processedJobData = await firstValueFrom(
+          this.analysisService.send('extract_skills', jobContent),
+        );
 
         await this.storeJobPost(jobId, jobContent, processedJobData, userId);
         return processedJobData;
@@ -78,52 +74,6 @@ export class LinkedinService {
     }
   }
 
-  // Process content directly instead of waiting for RMQ response
-  private async processJobContent(jobContent: string): Promise<SkillsData> {
-    // Simple implementation to structure job content
-    // In a real scenario, this would call the OpenAI service directly
-    const defaultSkills: SkillsData = {
-      languages: [],
-      frontend_frameworks_libraries: [],
-      frontend_styling_ui: [],
-      backend_frameworks_runtime: [],
-      databases_datastores: [],
-      database_tools_orms: [],
-      cloud_platforms: [],
-      devops_cicd: [],
-      infrastructure_as_code_config: [],
-      monitoring_observability: [],
-      ai_ml_datascience: [],
-      mobile_development: [],
-      testing_quality: [],
-      apis_communication: [],
-      architecture_design_patterns: [],
-      security: [],
-      methodologies_collaboration: [],
-      operating_systems: [],
-      web_servers_proxies: [],
-      other_technologies_concepts: [],
-      brief_job_description: [jobContent.slice(0, 200) + '...'],
-      other_relevent_info: [],
-    };
-
-    // Extract common skills based on simple keyword search
-    const lowerContent = jobContent.toLowerCase();
-
-    if (lowerContent.includes('javascript'))
-      defaultSkills.languages.push('JavaScript');
-    if (lowerContent.includes('typescript'))
-      defaultSkills.languages.push('TypeScript');
-    if (lowerContent.includes('python')) defaultSkills.languages.push('Python');
-    if (lowerContent.includes('react'))
-      defaultSkills.frontend_frameworks_libraries.push('React');
-    if (lowerContent.includes('node'))
-      defaultSkills.backend_frameworks_runtime.push('Node.js');
-    if (lowerContent.includes('aws')) defaultSkills.cloud_platforms.push('AWS');
-
-    return defaultSkills;
-  }
-
   private async fetchJobContent(jobId: string): Promise<string | null> {
     const PYTHON_API_URL = this.configService.getOrThrow<string>('PYTHON_URL');
     this.logger.log(
@@ -131,57 +81,56 @@ export class LinkedinService {
     );
 
     try {
-      const maxRetries = 3;
-      const retryDelay = 1000;
-
       const resp = await firstValueFrom(
-        this.httpService
-          .get(`${PYTHON_API_URL}/scrape-job`, {
-            params: {
-              jobId: jobId,
-            },
-            timeout: 15000,
-          })
-          .pipe(
-            retryWhen((errors) =>
-              errors.pipe(
-                mergeMap((error, i) => {
-                  const retryAttempt = i + 1;
-                  this.logger.warn(
-                    `Request failed, attempt ${retryAttempt}/${maxRetries}: ${error.message}`,
-                  );
-
-                  if (retryAttempt <= maxRetries) {
-                    return timer(retryDelay * retryAttempt);
-                  }
-                  return throwError(() => error);
-                }),
-                take(maxRetries),
-              ),
-            ),
-            catchError((error: AxiosError) => {
-              this.logger.error(`Error from Python service: ${error.message}`);
-              if (error.response) {
-                this.logger.error(
-                  `Response error data: ${JSON.stringify(error.response.data)}`,
-                );
-              }
-
-              return of(null);
-            }),
-          ),
+        this.httpService.get(`${PYTHON_API_URL}/scrape-job`, {
+          params: {
+            jobId: jobId,
+          },
+          timeout: 25000,
+        }),
       );
 
-      if (resp && resp.data && resp.data.md) {
+      if (resp?.data?.md) {
+        this.logger.log(
+          `Successfully received job content from Python service: ${resp.data.md.substring(
+            0,
+            50,
+          )}...`,
+        );
         return resp.data.md as string;
+      } else {
+        this.logger.error(
+          `Python service returned invalid response format: ${JSON.stringify(
+            resp?.data || 'No data',
+          )}`,
+        );
+        throw new NotFoundException(
+          'No job content found in Python service response',
+        );
       }
     } catch (error) {
+      if (error?.response?.data) {
+        this.logger.error(
+          `Python service error response: ${JSON.stringify(
+            error.response.data,
+          )}`,
+        );
+      }
+
       this.logger.error(
         `Exception during Python service request: ${error.message}`,
+        error.stack,
       );
-    }
 
-    return null;
+      if (error.code === 'ECONNREFUSED') {
+        this.logger.error(
+          `Could not connect to Python service at ${PYTHON_API_URL}. Make sure the service is running and accessible.`,
+        );
+        throw new InternalServerErrorException('Python service unavailable');
+      }
+
+      throw new NotFoundException('Failed to retrieve job content');
+    }
   }
 
   private async storeJobPost(

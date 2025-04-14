@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import { AuthModule, DrizzleModule, LoggerModule } from '@app/common';
 import { HttpModule } from '@nestjs/axios';
-import { RmqModule } from '@app/common/rmq/rmq.module';
+import { RmqModule, RmqService } from '@app/common/rmq';
 import { StatsService } from './services/stats/stats.service';
 import { StatsController } from './controller/stats/stats.controller';
 import { SkillsController } from './controller/skills/skills.controller';
@@ -59,6 +59,6 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
     CompareController,
     OpenAiController,
   ],
-  providers: [StatsService, CompareService, OpenAi],
+  providers: [StatsService, CompareService, OpenAi, RmqService],
 })
 export class AnalysisModule {}

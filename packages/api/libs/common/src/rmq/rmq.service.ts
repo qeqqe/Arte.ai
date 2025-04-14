@@ -9,7 +9,7 @@ export class RmqService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  getOptions(queue: string, noAck = false): RmqOptions {
+  getOptions(queue: string, noAck = true): RmqOptions {
     return {
       transport: Transport.RMQ,
       options: {
@@ -20,7 +20,7 @@ export class RmqService {
         queueOptions: {
           durable: true,
           arguments: {
-            'x-message-ttl': 60000,
+            'x-message-ttl': 300000,
           },
         },
       },

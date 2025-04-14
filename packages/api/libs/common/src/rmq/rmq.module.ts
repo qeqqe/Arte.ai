@@ -21,13 +21,12 @@ export class RmqModule {
               options: {
                 urls: [configService.getOrThrow<string>('RABBITMQ_URI')],
                 queue: name,
-                noAck: true, // Auto-acknowledge messages
+                noAck: true,
                 persistent: true,
                 queueOptions: {
                   durable: true,
-                  // This ensures old messages are not processed again on startup
                   arguments: {
-                    'x-message-ttl': 60000, // Messages expire after 60 seconds
+                    'x-message-ttl': 300000,
                   },
                 },
                 prefetchCount: 1,

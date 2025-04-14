@@ -16,7 +16,7 @@ export class CompareService {
     string,
     { response: string; timestamp: number }
   >();
-  private readonly CACHE_TTL = 3600000; // 1h ttl
+  private readonly CACHE_TTL = 3600000;
 
   constructor(
     private readonly configService: ConfigService,

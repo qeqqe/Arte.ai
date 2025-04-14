@@ -65,13 +65,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
                 'amqp://guest:guest@rabbitmq:5672',
               ),
             ],
-            queue: configService.get<string>(
-              'ANALYSIS_QUEUE_NAME',
-              'ANALYSIS_QUEUE',
-            ),
+            queue: 'ANALYSIS_SERVICE',
             queueOptions: {
               durable: true,
             },
+            noAck: true,
           },
         }),
         inject: [ConfigService],

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..services.pdf_service import PDFService
 from ..services.job_scraper import JobScraper
 import logging
+import traceback
 from fastapi.responses import JSONResponse
 
 def create_app() -> FastAPI:
@@ -39,20 +40,35 @@ def create_app() -> FastAPI:
     @app.get("/scrape-job")
     async def scrape_job(jobId: str):
         if not jobId:
+            logger.error("Missing jobId parameter")
             return JSONResponse(
                 status_code=400,
                 content={"error": "Job ID is required"}
             )
         
         try:
-            logger.info(f"Scraping job with ID: {jobId}")
+            logger.info(f"Processing scrape request for job ID: {jobId}")
             job_data = await job_scraper.scrape(jobId)
+            
+            if not job_data or not job_data.get("md"):
+                logger.error(f"Empty job data returned for job ID: {jobId}")
+                return JSONResponse(
+                    status_code=404,
+                    content={"error": "No job content found"}
+                )
+            
+            logger.info(f"Successfully retrieved job data for ID: {jobId}, content length: {len(job_data['md'])}")
             return job_data
+            
         except Exception as e:
-            logger.error(f"Error scraping job: {str(e)}")
+            error_msg = str(e)
+            logger.error(f"Error processing job ID {jobId}: {error_msg}")
+            logger.error(traceback.format_exc())
+            
+            # Return error without any dummy data
             return JSONResponse(
                 status_code=500,
-                content={"error": f"Failed to scrape job: {str(e)}"}
+                content={"error": f"Failed to scrape job: {error_msg}"}
             )
 
     return app

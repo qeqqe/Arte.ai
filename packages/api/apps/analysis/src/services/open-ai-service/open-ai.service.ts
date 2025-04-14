@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import { OnModuleInit } from '@nestjs/common';
-import { SkillsData } from '@app/common/jobpost/skills.types';
+import { SkillsData } from '../../types/skills.types';
 
 @Injectable()
 export class OpenAi implements OnModuleInit {
@@ -22,15 +22,6 @@ export class OpenAi implements OnModuleInit {
   }
 
   async extractSkills(jobPosting: string): Promise<SkillsData> {
-    if (
-      !jobPosting ||
-      typeof jobPosting !== 'string' ||
-      jobPosting.trim() === ''
-    ) {
-      this.logger.error('Empty or invalid job posting received');
-      throw new Error('Empty or invalid job posting');
-    }
-
     try {
       const response = await this.client.chat.completions.create({
         model: this.configService.get<string>('MODEL', 'gpt-4o'),
@@ -75,23 +66,20 @@ export class OpenAi implements OnModuleInit {
       const content = response.choices[0].message.content;
       if (!content) {
         this.logger.error(
-          `Failed to process the result for the job post ${jobPosting.slice(
-            0,
+          `Falied to proccess the result for the job post ${jobPosting.slice(
             20,
-          )}...`,
+          )}`,
         );
-        throw new Error('No content returned from OpenAI');
+        throw new Error('no content returned from OpenAI');
       }
-
-      // Only log on successful completion
-      this.logger.log(`Processed job analysis successfully`);
+      this.logger.log(`Proccessed job analysis: \n ${content}`);
       return JSON.parse(content) as SkillsData;
     } catch (error) {
       this.logger.error(
-        `Error extracting skills: ${error.message}`,
+        `error extracting skills: ${error.message}`,
         error.stack,
       );
-      throw new Error(`Failed to extract skills: ${error.message}`);
+      throw new Error(`failed to extract skills: ${error.message}`);
     }
   }
 
@@ -202,14 +190,13 @@ export class OpenAi implements OnModuleInit {
   Based on this data, create a detailed profile of this developer.
 `;
   }
-
   async generateSkillGapAnalysis(
     candidateSkills: any,
     jobRequirements: any,
     additionalContext?: string,
   ): Promise<string> {
     this.logger.debug('Sending request to GitHub marketplace models');
-    const model = this.configService.get<string>('GITHUB_MODEL', 'gpt-4o-mini');
+    const model = this.configService.get<string>('MODEL', 'gpt-4o');
 
     try {
       const prompt = this.buildSkillGapPrompt(
