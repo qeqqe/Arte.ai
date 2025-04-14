@@ -21,29 +21,6 @@ export class OpenAi implements OnModuleInit {
     });
   }
 
-  async generateEmbedding(text: string): Promise<number[]> {
-    try {
-      this.logger.log(`generating embedding for text of length ${text.length}`);
-      const startTime = Date.now();
-
-      const response = await this.client.embeddings.create({
-        model: this.configService.get<string>(
-          'EMBED_MODEL',
-          'text-embedding-3-large',
-        ),
-        input: text,
-      });
-
-      this.logger.log(`embedding generated in ${Date.now() - startTime}ms`);
-      return response.data[0].embedding;
-    } catch (error) {
-      this.logger.error(
-        `embedding generation error: ${error.message}`,
-        error.stack,
-      );
-    }
-  }
-
   async extractSkills(jobPosting: string): Promise<SkillsData> {
     try {
       const response = await this.client.chat.completions.create({
@@ -73,6 +50,7 @@ export class OpenAi implements OnModuleInit {
             - web_servers_proxies
             - other_technologies_concepts
             - brief_job_description
+            - other_relevent_info
             
             Format your response as a valid JSON object with these category names as keys and arrays of string values.
             If a category has no skills, provide an empty array.`,
@@ -87,9 +65,14 @@ export class OpenAi implements OnModuleInit {
 
       const content = response.choices[0].message.content;
       if (!content) {
+        this.logger.error(
+          `Falied to proccess the result for the job post ${jobPosting.slice(
+            20,
+          )}`,
+        );
         throw new Error('no content returned from OpenAI');
       }
-
+      this.logger.log(`Proccessed job analysis: \n ${content}`);
       return JSON.parse(content) as SkillsData;
     } catch (error) {
       this.logger.error(
@@ -206,5 +189,95 @@ export class OpenAi implements OnModuleInit {
 
   Based on this data, create a detailed profile of this developer.
 `;
+  }
+  async generateSkillGapAnalysis(
+    candidateSkills: any,
+    jobRequirements: any,
+    additionalContext?: string,
+  ): Promise<string> {
+    this.logger.debug('Sending request to GitHub marketplace models');
+    const model = this.configService.get<string>('MODEL', 'gpt-4o');
+
+    try {
+      const prompt = this.buildSkillGapPrompt(
+        candidateSkills,
+        jobRequirements,
+        additionalContext,
+      );
+
+      this.logger.debug(`Using model: ${model}`);
+      const response = await this.client.chat.completions.create({
+        model,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a skilled career advisor and technical skills expert. ALSO PROVIDE ALL THE RESPONSE UNDER 2000 TOKENS',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 2000,
+        top_p: 1,
+        response_format: { type: 'json_object' },
+      });
+
+      if (!response.choices || !response.choices[0]?.message?.content) {
+        throw new Error('Invalid response from GitHub AI model');
+      }
+
+      this.logger.debug('Successfully received response from model');
+      return response.choices[0].message.content;
+    } catch (error) {
+      this.logger.error(
+        `Error in generateSkillGapAnalysis: ${error.message}`,
+        error.stack,
+      );
+      if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+        throw new Error('Model request timed out. Please try again.');
+      } else if (error.name === 'RateLimitError') {
+        throw new Error('API rate limit exceeded. Please try again later.');
+      }
+      throw error;
+    }
+  }
+
+  private buildSkillGapPrompt(
+    candidateSkills: any,
+    jobRequirements: any,
+    additionalContext?: string,
+  ): string {
+    return `
+      I need a detailed analysis of the skill gap between a candidate and job requirements.
+      
+      ## CANDIDATE SKILLS
+      ${JSON.stringify(candidateSkills, null, 2)}
+      
+      ## JOB REQUIREMENTS
+      ${JSON.stringify(jobRequirements, null, 2)}
+      
+      ${
+        additionalContext ? `## ADDITIONAL CONTEXT\n${additionalContext}\n` : ''
+      }
+      
+      Please provide:
+      1. A skill gap analysis with match percentage for each required skill
+      2. Overall suitability score (0-100)
+      3. Specific recommendations for skills to develop
+      4. Estimated time to close each skill gap
+      5. Suggested learning resources for each missing skill
+      
+      Format the response as JSON with the following structure:
+      {
+        "matchedSkills": [...],
+        "gapAnalysis": [...],
+        "overallScore": number,
+        "recommendations": [...],
+        "insights": "string"
+      }
+    `;
   }
 }

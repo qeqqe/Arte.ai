@@ -8,7 +8,7 @@ import {
   DRIZZLE_PROVIDER,
   DrizzleProvider,
 } from '@app/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import * as Joi from 'joi';
 import { GithubController } from './controllers/github/github.controller';
@@ -23,6 +23,8 @@ import { RmqModule } from '@app/common/rmq/rmq.module';
 import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './controllers/health/health.controller';
 import { TestController } from './test.controller';
+import { OpenAi } from 'apps/analysis/src/services/open-ai-service/open-ai.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -42,11 +44,37 @@ import { TestController } from './test.controller';
         RABBITMQ_URI: Joi.string().required(),
         HTTP_PORT: Joi.number().required(),
         FRONTEND_URL: Joi.string().required(),
+        PYTHON_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         DATABASE_URL: Joi.string().required(),
+        OPENAI_API_KEY: Joi.string().required(),
+        ALLOWED_ORIGINS: Joi.string().required(),
+        JOB_SCRAPER_URL: Joi.string().required(),
       }),
     }),
     RmqModule.register({ name: 'INGESTION_SERVICE' }),
+    ClientsModule.registerAsync([
+      {
+        name: 'ANALYSIS_SERVICE',
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>(
+                'RABBITMQ_URI',
+                'amqp://guest:guest@rabbitmq:5672',
+              ),
+            ],
+            queue: 'ANALYSIS_SERVICE',
+            queueOptions: {
+              durable: true,
+            },
+            noAck: true,
+          },
+        }),
+        inject: [ConfigService],
+      },
+    ]),
   ],
   controllers: [
     IngestionController,
@@ -64,6 +92,7 @@ import { TestController } from './test.controller';
     ResumeService,
     LeetcodeService,
     DrizzleProvider,
+    OpenAi,
     {
       provide: DRIZZLE_PROVIDER,
       useFactory: async (drizzleProvider: DrizzleProvider) => {

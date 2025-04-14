@@ -23,7 +23,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       `Has authorization header: ${!!request.headers.authorization}`,
     );
     this.logger.debug(
-      `Has cookies: ${!!request.cookies && Object.keys(request.cookies).length > 0}`,
+      `Has cookies: ${
+        !!request.cookies && Object.keys(request.cookies).length > 0
+      }`,
     );
 
     if (request.headers.authorization) {
@@ -34,7 +36,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     if (request.cookies?.access_token) {
       this.logger.debug(
-        `Cookie token found (first 15 chars): ${request.cookies.access_token.substring(0, 15)}...`,
+        `Cookie token found (first 15 chars): ${request.cookies.access_token.substring(
+          0,
+          15,
+        )}...`,
       );
     }
 

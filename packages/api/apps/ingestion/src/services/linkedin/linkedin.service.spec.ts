@@ -3,11 +3,9 @@ import { LinkedinService } from './linkedin.service';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { DRIZZLE_PROVIDER } from '@app/common';
-import { of } from 'rxjs';
 
 describe('LinkedinService', () => {
   let service: LinkedinService;
-  let httpService: HttpService;
 
   beforeEach(async () => {
     const mockHttpService = {
@@ -41,7 +39,6 @@ describe('LinkedinService', () => {
     }).compile();
 
     service = module.get<LinkedinService>(LinkedinService);
-    httpService = module.get<HttpService>(HttpService);
   });
 
   it('should be defined', () => {

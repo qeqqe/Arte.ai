@@ -1,67 +1,40 @@
 import { NestFactory } from '@nestjs/core';
 import { AnalysisModule } from './analysis.module';
-import { ConfigService } from '@nestjs/config';
-import * as compression from 'compression';
-import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
+import { ConfigService } from '@nestjs/config';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import * as cookieParser from 'cookie-parser';
-import { ValidationPipe } from '@nestjs/common';
-
 async function bootstrap() {
-  const app = await NestFactory.create(AnalysisModule, {
-    bufferLogs: true,
-    cors: true,
-  });
+  const app = await NestFactory.create(AnalysisModule);
+  const configService = app.get<ConfigService>(ConfigService);
+  const logger = app.get<Logger>(Logger);
 
-  const configService = app.get(ConfigService);
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
-
-  app.useLogger(app.get(Logger));
-
+  app.useLogger(logger);
   app.use(cookieParser());
-  app.use(compression());
-  app.use(helmet());
-
-  app.enableCors({
-    origin: frontendUrl,
-    credentials: true,
+  // Connecting to RMQ with consistent settings
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [configService.get<string>('RABBITMQ_URI')],
+      queue: 'ANALYSIS_SERVICE',
+      queueOptions: {
+        durable: true,
+      },
+      noAck: true,
+    },
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-    }),
-  );
+  logger.log('Starting analysis microservice');
+  await app.startAllMicroservices();
 
-  const server = app.getHttpAdapter().getInstance();
-
-  if (server && server._router && server._router.stack) {
-    const routes = server._router.stack
-      .filter((layer) => layer.route)
-      .map((layer) => {
-        const route = layer.route;
-        const methods = Object.keys(route.methods)
-          .map((m) => m.toUpperCase())
-          .join(',');
-        return {
-          path: route.path,
-          method: methods,
-        };
-      });
-
-    routes.forEach((r) => console.log(`${r.method} ${r.path}`));
-  } else {
-    console.log(
-      'Unable to retrieve routes - server structure is different than expected',
-    );
-  }
-
-  const port = configService.get<number>('HTTP_PORT', 3002);
+  const port = configService.get<number>('HTTP_PORT', 3003);
   await app.listen(port);
 
-  const logger = app.get(Logger);
-  logger.log(`Analysis service running on port ${port}`);
+  logger.log(`Analysis service running on HTTP port ${port}`);
+  logger.log('RabbitMQ microservice is listening for messages');
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Error starting application:', err);
+  process.exit(1);
+});

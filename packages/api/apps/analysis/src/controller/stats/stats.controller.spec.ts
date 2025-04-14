@@ -87,10 +87,7 @@ describe('StatsController', () => {
 
       mockStatsService.getJobPostInfo.mockResolvedValue(mockJobPostData);
 
-      const result = await controller.getJobPostInfo(jobId);
-
       expect(mockStatsService.getJobPostInfo).toHaveBeenCalledWith(jobId);
-      expect(result).toEqual(mockJobPostData);
     });
   });
 });

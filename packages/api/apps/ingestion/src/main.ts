@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { IngestionModule } from './ingestion.module';
 import { ConfigService } from '@nestjs/config';
-import * as compression from "compression";
-import helmet from "helmet";
+import * as compression from 'compression';
+import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const app = await NestFactory.create(IngestionModule, {
@@ -49,6 +50,28 @@ async function bootstrap() {
           method: methods,
         };
       });
+
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.RMQ,
+      options: {
+        urls: [
+          configService.get<string>(
+            'RABBITMQ_URI',
+            'amqp://guest:guest@rabbitmq:5672',
+          ),
+        ],
+        queue: configService.get<string>(
+          'INGESTION_QUEUE_NAME',
+          'INGESTION_QUEUE',
+        ),
+        queueOptions: {
+          durable: true,
+        },
+        prefetchCount: 10,
+        noAck: false,
+        persistent: true,
+      },
+    });
 
     routes.forEach((r) => console.log(`${r.method} ${r.path}`));
   } else {
