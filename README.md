@@ -1,61 +1,51 @@
-# Skill Gap Analyzer
+# Arte.ai - Your Personal Skill Gap Analyzer
 
-Skill Gap Analyzer is a SaaS solution helping professionals by comparing their existing skill set with market needs. The platform takes data from various sources such as user's LinkedIn, GitHub, LeetCode, and resumes, extracts and normalizes skills with the help of NLP, and matches them with job requirements to create personalized, actionable suggestions.
+Ever wonder how your skills stack up against the requirements of your dream job? Arte.ai is here to help!
 
-## Key Features
+Arte.ai analyzes your personal data (like your resume, github, leetcode) and compares it against job postings you're interested in. Using Natural Language Processing (NLP), it identifies the key skills required for the role and highlights where you shine and where there might be gaps.
 
-- **Multi-Source Data Ingestion:**
-  - Scrape user data from LinkedIn, GitHub, and LeetCode.
-  - Parse resumes (PDF, DOCX) to pull relevant information.
-- **Skill Extraction & Normalization:**
-  - **Plan A:** Using external NLP APIs (Gemini or OpenAI) for direct extraction.
-  - **Plan B:** Using a custom Python microservice (with FastAPI and HuggingFace Transformers) for fine-grained, in-house processing.
-- **Skill Gap Analysis:**
-  - Match user skills against job posting requirements.
-- Provide a readiness score and suggest targeted learning.
-- **Authentication & Security:**
-  - Secure sign-in and sign-up through GitHub OAuth.
-  - JWT authentication with refresh token handling.
-- **Microservices Architecture:**
-  - Developed as a NestJS monorepo with dedicated microservices for Auth, Ingestion, Analysis, Job Processing, etc.
-  - Shared libraries for utilities common to all (e.g., Pino logger, DTOs, configuration).
-- **Containerization & Deployment:**
-  - Everything is containerized and orchestrated using Docker Compose for standardized deployment.
+Think of it as your personal career advisor, giving you a clear picture of your standing in the job market and visualizing what skills you might need to develop to land that perfect position.
 
-## Architecture Overview
+## Features (Planned)
 
-The project is organized into separate microservices:
+- **User Data Input:** Upload your resume or manually input your skills and experience.
+- **Job Posting Analysis:** Paste job descriptions or provide URLs for analysis.
+- **Skill Gap Identification:** Compares your profile against job requirements using NLP.
+- **Visualization:** Presents the analysis in an easy-to-understand visual format (e.g., charts, lists).
+- **Actionable Insights:** Suggests areas for skill development.
 
-- **Auth Service:**
-  Manages GitHub OAuth login, handles callbacks, and provides JWT tokens.
-- **Ingestion Service:**
-  Processes scraping (through Crawl4AI) and resume parsing.
-- **Analysis Service:**
-  Summarizes user data, invokes NLP modules, and does skill gap calculation.
-- **Job Service:**
-  Scrapes job posts and extracts job requisites.
-- **Python Microservice (Plan B):**
-  Offers bespoke NLP-driven skill extraction through HuggingFace Transformers.
+## Setup
 
-## Getting Started
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/qeqqe/Arte.ai.git
+    cd Skill-Gap-Analyzer
+    ```
+2.  **Set-up Environment variable**
+    - Rename the `.env.example` to `.env` and enter your variables
+3.  **Run:**
+    ```bash
+    docker compose up
+    ```
+    _(Make sure you have docker & docker-compose installed)_
 
-### Prerequisites
+## Usage
 
-- Node.js
-- Docker & Docker Compose
+1.  **Authenticate:** Log in to the application using your GitHub account.
+2.  **Onboard & Connect Data:** Follow the onboarding steps to connect your data sources, such as uploading your resume, linking your GitHub profile, or connecting your LeetCode account. This helps Arte.ai understand your current skills and experience.
+3.  **Analyze a Job:** Find a job posting on LinkedIn that interests you and copy its URL (e.g., `https://www.linkedin.com/jobs/view/0123456789`).
+4.  **Submit & View Results:** Paste the LinkedIn job URL into Arte.ai. The application will analyze the job description against your profile and present you with a skill gap analysis, showing how you match up and where you can improve.
 
-### Installation
+## Contributing
 
-1. **Clone the repository:**
+Contributions are welcome! Please feel free to submit pull requests or open issues for bugs, feature requests, or suggestions.
 
-   ```bash
-   git clone https://github.com/qeqqe/skill-gap-analyzer.git
-   cd skill-gap-analyzer
-   ```
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
-2. **Run the docker container:**
-   ```bash
-   docker-compose up
-   ```
-3. **Access the Application:**
-   navigate to `http://localhost:3000`.
+## License
+
+Distributed under the MIT License. See `LICENSE` file for more information.

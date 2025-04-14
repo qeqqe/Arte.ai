@@ -1,99 +1,114 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Arte.ai - Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This package contains the backend services for the Arte.ai application, built with [NestJS](https://nestjs.com/) and TypeScript. It follows a microservice architecture to handle different aspects of the application logic.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Architecture Overview
 
-## Description
+The backend is composed of several microservices located under the `/apps` directory, communicating asynchronously via RabbitMQ. Shared functionalities and data structures are organized within the `/libs` directory.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Microservices (`/apps`)
 
-## Project setup
+1.  **Auth Service (`/apps/auth`)**
 
-```bash
-$ pnpm install
-```
+    - **Responsibility:** Handles all user authentication and authorization.
+    - **Features:**
+      - GitHub OAuth 2.0 for initial login/signup.
+      - JWT-based session management using access and refresh tokens.
+      - Implements authentication strategies and guards.
 
-## Compile and run the project
+2.  **Ingestion Service (`/apps/ingestion`)**
 
-```bash
-# development
-$ pnpm run start
+    - **Responsibility:** Gathers and processes data from various user sources and job postings.
+    - **Features:**
+      - Fetches user data from GitHub (profile info, pinned repositories).
+      - Fetches user data from LeetCode (problem-solving stats).
+      - Handles resume uploads (PDF parsing via a Python service).
+      - Scrapes and processes job descriptions from LinkedIn URLs (via an external scraper/internal logic).
+      - Stores ingested data in the database.
+      - Publishes events (e.g., `job_scraped`) to RabbitMQ for further processing.
 
-# watch mode
-$ pnpm run start:dev
+3.  **Analysis Service (`/apps/analysis`)**
+    - **Responsibility:** Performs analysis based on user data and job requirements using NLP.
+    - **Features:**
+      - Listens for events from RabbitMQ (e.g., to process scraped job data).
+      - Uses OpenAI (or other NLP services) to extract skills from job descriptions and user profiles (resume, GitHub READMEs).
+      - Provides endpoints to compare a user's processed skills against a job's required skills.
+      - Generates skill gap analysis reports.
+      - Calculates user statistics and proficiency levels.
 
-# production mode
-$ pnpm run start:prod
-```
+### Shared Libraries (`/libs`)
 
-## Run tests
+1.  **Common Library (`/libs/common`)**
 
-```bash
-# unit tests
-$ pnpm run test
+    - Contains shared modules, services, and configurations used across multiple microservices.
+    - Examples: Drizzle ORM setup, database schemas, RabbitMQ service (`RmqModule`, `RmqService`), authentication guards (`JwtAuthGuard`), logging (`LoggerModule`), base DTOs, utility functions.
 
-# e2e tests
-$ pnpm run test:e2e
+2.  **DTOs Library (`/libs/dtos`)**
+    - Defines Data Transfer Objects used for request/response validation and type safety, particularly for inter-service communication or API contracts.
 
-# test coverage
-$ pnpm run test:cov
-```
+## Technologies Used
 
-## Deployment
+- **Framework:** NestJS
+- **Language:** TypeScript
+- **Database:** PostgreSQL
+- **ORM:** Drizzle ORM
+- **Authentication:** GitHub OAuth, JWT (Access & Refresh Tokens)
+- **Message Broker:** RabbitMQ
+- **API Specification:** Swagger (via `@nestjs/swagger`)
+- **NLP:** OpenAI (GPT models)
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Setup & Running
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+This API package is part of the main Arte.ai monorepo setup.
 
-```bash
-$ pnpm install -g mau
-$ mau deploy
-```
+1.  **Prerequisites:** Ensure you have Node.js, pnpm, Docker, and Docker Compose installed.
+2.  **Environment Variables:** Each microservice (`auth`, `ingestion`, `analysis`) has its own `.env.example` file within its respective `apps/<service-name>` directory. Copy these to `.env` files and populate them with the necessary credentials and configuration (Database URL, JWT secrets, API keys, RabbitMQ URI, etc.). You might also need a root `.env` file in the `packages/api` directory depending on shared configurations.
+3.  **Install Dependencies:** From the root of the _monorepo_ (`/home/qeqqer/codebase/Skill-Gap-Analyzer/`), run:
+    ```bash
+    pnpm --filter api i
+    ```
+4.  **Database Migrations:** Generate and apply database migrations using Drizzle Kit (from within the `packages/api` directory):
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+    ```bash
+    # Generate migration files based on schema changes
+    pnpm db:generate
 
-## Resources
+    # Apply migrations (ensure your database service is running)
+    # You might need a separate script or command to apply migrations,
+    # often run before starting the application services.
+    # Example: node apply-migrations.js or integrate into startup
+    ```
 
-Check out a few resources that may come in handy when working with NestJS:
+5.  **Run Services:** Use Docker Compose from the _monorepo root_ to build and start all services (including the database, RabbitMQ, and the NestJS microservices):
+    ```bash
+    docker compose up --build
+    ```
+    - The `--build` flag is only needed the first time or when code/dependencies change.
+    - Services will typically run in watch mode for development.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Contributing
 
-## Support
+Contributions to the backend are highly welcome!
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+1.  **Fork & Clone:** Fork the main `Arte.ai` repository and clone your fork.
+2.  **Branch:** Create a new branch for your feature or bug fix (`git checkout -b feature/my-new-feature` or `fix/issue-123`).
+3.  **Develop:** Make your changes within the `packages/api` directory, adhering to the existing code style and architecture. Add tests where appropriate.
+4.  **Test:** Ensure existing tests pass and add new ones for your changes.
 
-## Stay in touch
+    ```bash
+    # Run unit/integration tests (from packages/api)
+    pnpm test
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+    # Run e2e tests (from packages/api)
+    pnpm test:e2e
+    ```
 
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+5.  **Lint & Format:** Ensure code quality.
+    ```bash
+    # From packages/api
+    pnpm lint
+    pnpm format
+    ```
+6.  **Commit:** Commit your changes with clear messages.
+7.  **Push:** Push your branch to your fork.
+8.  **Pull Request:** Open a Pull Request against the main `Arte.ai` repository's `main` or `develop` branch. Describe your changes clearly.
