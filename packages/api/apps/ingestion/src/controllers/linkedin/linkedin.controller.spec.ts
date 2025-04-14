@@ -4,7 +4,6 @@ import { LinkedinService } from '../../services/linkedin/linkedin.service';
 
 describe('LinkedinController', () => {
   let controller: LinkedinController;
-  let linkedinService: LinkedinService;
 
   beforeEach(async () => {
     const mockLinkedinService = {
@@ -22,7 +21,6 @@ describe('LinkedinController', () => {
     }).compile();
 
     controller = module.get<LinkedinController>(LinkedinController);
-    linkedinService = module.get<LinkedinService>(LinkedinService);
   });
 
   it('should be defined', () => {
