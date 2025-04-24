@@ -1,25 +1,28 @@
 'use client';
 
 export async function saveOnboardingData(data: Record<string, any>) {
-  if (data.resume instanceof File) {
-    const formData = new FormData();
-    formData.append('resume', data.resume);
+  try {
+    if (data.resume instanceof File) {
+      const formData = new FormData();
+      formData.append('file', data.resume);
 
-    const otherData = { ...data };
-    delete otherData.resume;
-    formData.append('data', JSON.stringify(otherData));
+      // Handle resume upload first
+      const resumeResponse = await fetch('/api/onboarding/resume', {
+        method: 'POST',
+        body: formData,
+      });
 
-    const response = await fetch('/api/onboarding', {
-      method: 'POST',
-      body: formData,
-    });
+      if (!resumeResponse.ok) {
+        const error = await resumeResponse.json();
+        throw new Error(error.error || 'Failed to upload resume');
+      }
 
-    if (!response.ok) {
-      throw new Error('Failed to save onboarding data');
+      // Remove resume from data as it's already uploaded
+      const { resume, ...restData } = data;
+      data = restData;
     }
 
-    return await response.json();
-  } else {
+    // Submit the rest of the onboarding data
     const response = await fetch('/api/onboarding', {
       method: 'POST',
       headers: {
@@ -32,7 +35,11 @@ export async function saveOnboardingData(data: Record<string, any>) {
       throw new Error('Failed to save onboarding data');
     }
 
-    return await response.json();
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Error saving onboarding data:', error);
+    throw error;
   }
 }
 

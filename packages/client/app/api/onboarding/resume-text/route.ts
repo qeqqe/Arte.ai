@@ -1,24 +1,30 @@
 import { redirect } from 'next/navigation';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const accessToken = request.cookies.get('access_token')?.value;
 
   if (!accessToken) return redirect('/login');
 
   try {
-    const ingestionUrl = process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL;
-    console.log(
-      `Connecting to ingestion service at: ${ingestionUrl}/github/user-github`
-    );
+    const { text } = await request.json();
 
-    const response = await fetch(`${ingestionUrl}/github/user-github`, {
-      method: 'GET',
+    if (!text || typeof text !== 'string') {
+      return NextResponse.json(
+        { error: 'No text provided or invalid format' },
+        { status: 400 }
+      );
+    }
+
+    const ingestionUrl = process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL;
+
+    const response = await fetch(`${ingestionUrl}/resume/upload-text`, {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      cache: 'no-store',
+      body: JSON.stringify({ text }),
     });
 
     if (!response.ok) {
@@ -28,20 +34,19 @@ export async function GET(request: NextRequest) {
       console.error(`Response body: ${errorText}`);
 
       return NextResponse.json(
-        { error: `Failed to fetch GitHub data: ${statusText}` },
+        { error: `Failed to upload resume text: ${statusText}` },
         { status: response.status }
       );
     }
 
     const data = await response.json();
-    console.log('Successfully fetched GitHub data');
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Error fetching GitHub data:', error);
+    console.error('Error uploading resume text:', error);
 
     return NextResponse.json(
       {
-        error: 'Failed to fetch GitHub data',
+        error: 'Failed to upload resume text',
         details: error.message || 'Unknown error',
       },
       { status: 500 }

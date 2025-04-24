@@ -130,7 +130,6 @@ services:
           path: ./packages/client/pnpm-lock.yaml
     environment:
       - NEXT_PUBLIC_BACKEND_AUTH_URL=http://localhost:3001
-      - NEXT_PUBLIC_BACKEND_INGESTION_URL=http://localhost:3002
       - WATCHPACK_POLLING=true
     extra_hosts:
       - 'host.docker.internal:host-gateway'

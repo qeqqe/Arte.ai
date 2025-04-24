@@ -6,9 +6,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import GithubAgreement from './steps/github-agreement';
-import ResumeStep from './steps/resume-step';
-import LeetcodeStep from './steps/leetcode-step';
+import GithubAgreement from './steps/github/github-agreement';
+import ResumeStep from './steps/resume/resume-step';
+import LeetcodeStep from './steps/leetcode/leetcode-step';
 import { useOnboarding } from '@/libs/hooks/use-onboarding';
 
 export default function OnboardingForm() {
@@ -21,7 +21,7 @@ export default function OnboardingForm() {
   const steps = [
     { id: 'agreement', title: 'Github access', component: GithubAgreement },
     { id: 'resume', title: 'Resume Upload', component: ResumeStep },
-    { id: 'username', title: 'GitHub Username', component: LeetcodeStep },
+    { id: 'username', title: 'Leetcode Username', component: LeetcodeStep },
   ];
 
   const handleNext = () => {

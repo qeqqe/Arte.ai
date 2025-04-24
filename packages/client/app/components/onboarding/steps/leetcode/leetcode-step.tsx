@@ -27,33 +27,36 @@ export default function LeetcodeStep({ data, updateData }: UsernameStepProps) {
           <AtSign className="h-10 w-10 text-rose-600" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Your GitHub Username
+          Your LeetCode Username
         </h2>
         <p className="text-gray-600 max-w-md mx-auto">
-          We'll use this to fetch your GitHub profile and repositories.
+          We'll use this to fetch your Leetcode profile and progress.
         </p>
       </div>
 
       <div className="space-y-6">
         <div className="space-y-3 bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300">
-          <Label htmlFor="github-username" className="text-gray-700 text-base">
-            GitHub Username
+          <Label
+            htmlFor="leetcode-username"
+            className="text-gray-700 text-base"
+          >
+            Leetcode Username
           </Label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <AtSign className="h-5 w-5 text-rose-400" />
             </div>
             <Input
-              id="github-username"
+              id="leetcode-username"
               type="text"
-              placeholder="octocat"
+              placeholder="qeqqer"
               value={username}
               onChange={handleUsernameChange}
               className="pl-10 border-gray-200 focus:border-rose-300 focus:ring focus:ring-rose-200 focus:ring-opacity-50 h-12 text-lg rounded-lg shadow-sm"
             />
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Enter your GitHub username without the @ symbol
+            Enter your Leetcode username
           </p>
         </div>
 
@@ -65,26 +68,26 @@ export default function LeetcodeStep({ data, updateData }: UsernameStepProps) {
             Why we need this:
           </h3>
           <p className="text-sm text-gray-600 mb-3">
-            Your GitHub username helps us personalize your experience by:
+            Your Leetcode username helps us personalize your experience by:
           </p>
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-center">
               <div className="bg-rose-50 p-1 rounded-full mr-2">
                 <CircleCheck className="h-3.5 w-3.5 text-rose-500" />
               </div>
-              Displaying your repositories and contributions
+              Seeing your Leetcode progress and stats
             </li>
             <li className="flex items-center">
               <div className="bg-rose-50 p-1 rounded-full mr-2">
                 <CircleCheck className="h-3.5 w-3.5 text-rose-500" />
               </div>
-              Suggesting projects based on your interests
+              Analyzing your coding skills and strengths
             </li>
             <li className="flex items-center">
               <div className="bg-rose-50 p-1 rounded-full mr-2">
                 <CircleCheck className="h-3.5 w-3.5 text-rose-500" />
               </div>
-              Connecting you with developers with similar skills
+              Providing personalized resources
             </li>
           </ul>
         </div>
