@@ -41,7 +41,6 @@ export class ResumeController {
     const user = request['user'] as UserPayload;
     await this.resumeService.uploadResumeText(body.text, user.id);
 
-    // Return proper JSON response
     return {
       success: true,
       message: 'Resume text uploaded successfully',
