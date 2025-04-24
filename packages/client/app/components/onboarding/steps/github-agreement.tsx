@@ -1,9 +1,7 @@
 'use client';
 
-import type React from 'react';
-
 import { useState } from 'react';
-import { Github } from 'lucide-react';
+import { Github, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { TopRepository } from '@/types/onboarding/githubData';
@@ -21,17 +19,24 @@ export default function GithubAgreement({
   const [userGithubData, setUserGithubData] = useState<TopRepository | null>(
     null
   );
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchComplete, setFetchComplete] = useState(false);
+
   const handleAgree = async (checked: boolean) => {
     setAgreed(checked);
     updateData({ agreed: checked });
 
     if (checked) {
+      setIsLoading(true);
       try {
         const response = await fetch('/api/onboarding/github');
         const data = await response.json();
         setUserGithubData(data);
       } catch (error) {
         console.error('Error fetching GitHub data:', error);
+      } finally {
+        setIsLoading(false);
+        setFetchComplete(true);
       }
     }
   };
@@ -75,25 +80,146 @@ export default function GithubAgreement({
         </ul>
       </div>
 
-      <div className="flex items-start space-x-4 pt-6 bg-white p-4 rounded-lg border border-gray-100 shadow-sm mt-6 hover:border-rose-200 transition-all duration-300">
+      <div className="flex items-start space-x-4 pt-4 bg-white p-5 rounded-lg border border-gray-100 shadow-sm hover:border-rose-200 transition-all duration-300">
         <Checkbox
           id="terms"
           checked={agreed}
           onCheckedChange={handleAgree}
-          className="data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500 h-5 w-5 mt-0.5"
+          disabled={isLoading || fetchComplete}
+          className={`${
+            isLoading || fetchComplete
+              ? 'bg-gray-200 border-gray-300 cursor-not-allowed data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500'
+              : 'data-[state=checked]:bg-rose-500 data-[state=checked]:border-rose-500'
+          } h-5 w-5 mt-0.5 transition-colors duration-300`}
         />
         <div className="grid gap-1.5 leading-none">
           <Label
             htmlFor="terms"
-            className="text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className={`text-base font-medium leading-none peer-disabled:cursor-not-allowed ${
+              isLoading ? 'text-gray-400' : 'text-gray-900'
+            }`}
           >
             I agree to allow access to my GitHub repositories
+            {isLoading && (
+              <span className="ml-2 inline-flex items-center text-gray-500">
+                <Loader2 className="animate-spin h-4 w-4 mr-1" />
+                Fetching repositories...
+              </span>
+            )}
+            {fetchComplete && agreed && (
+              <span className="ml-2 inline-flex items-center text-green-600">
+                <Check className="h-4 w-4 mr-1" />
+                Repositories fetched
+              </span>
+            )}
           </Label>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1.5">
             You can revoke this permission at any time in your account settings.
           </p>
         </div>
       </div>
+
+      {isLoading && <FetchingAnimation />}
+    </div>
+  );
+}
+
+function FetchingAnimation() {
+  return (
+    <div className="mt-6 overflow-hidden">
+      <div className="bg-white border border-rose-100 rounded-lg shadow-sm">
+        <div className="p-4 border-b border-rose-50">
+          <div className="flex items-center">
+            <Loader2 className="animate-spin h-4 w-4 text-rose-500 mr-2" />
+            <span className="text-sm font-medium text-rose-700">
+              Fetching your GitHub repositories...
+            </span>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="flex space-x-1.5 items-center">
+            {['#3178c6', '#f1e05a', '#e34c26', '#563d7c', '#2b7489'].map(
+              (color, i) => (
+                <div
+                  key={i}
+                  className="rounded-full"
+                  style={{
+                    backgroundColor: color,
+                    height: '8px',
+                    width: '8px',
+                    animation: `pulse 1.5s infinite ${i * 0.15}s`,
+                    opacity: 0.8,
+                  }}
+                />
+              )
+            )}
+            <div className="text-xs text-gray-500 ml-2">
+              Analyzing language distribution
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center space-x-3">
+                <div
+                  className="h-8 w-8 rounded bg-gray-100 animate-pulse"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                />
+                <div className="space-y-2 flex-1">
+                  <div
+                    className="h-3.5 bg-gray-100 rounded w-3/4 animate-pulse"
+                    style={{ animationDelay: `${i * 0.1 + 0.1}s` }}
+                  />
+                  <div
+                    className="h-2.5 bg-gray-100 rounded-sm w-1/2 animate-pulse"
+                    style={{ animationDelay: `${i * 0.1 + 0.2}s` }}
+                  />
+                </div>
+                <div
+                  className="h-3 w-10 bg-gray-100 rounded animate-pulse"
+                  style={{ animationDelay: `${i * 0.1 + 0.3}s` }}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-4">
+            <div
+              className="h-full bg-rose-400"
+              style={{
+                width: '60%',
+                animation: 'progressBar 3s infinite linear',
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @keyframes pulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.8;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 1;
+          }
+        }
+        @keyframes progressBar {
+          0% {
+            width: 10%;
+          }
+          50% {
+            width: 70%;
+          }
+          100% {
+            width: 95%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

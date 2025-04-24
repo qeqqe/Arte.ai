@@ -1,21 +1,13 @@
 export interface TopRepository {
+  id?: string;
   name: string;
   url: string;
   description: string;
   stargazerCount: number;
   forkCount: number;
-  primaryLanguage: PrimaryLanguage;
-  repositoryTopics: RepositoryTopics;
-}
-
-export interface RepositoryTopics {
-  nodes: Node[];
-}
-
-export interface Node {
-  topic: PrimaryLanguage;
-}
-
-export interface PrimaryLanguage {
-  name: string;
+  userId?: string;
+  primaryLanguage: string;
+  repositoryTopics: string[] | string;
+  languages: Record<string, number> | string;
+  readme?: string;
 }
