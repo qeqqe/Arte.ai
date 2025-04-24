@@ -1,11 +1,3 @@
 {
-  "postman.settings.dotenv-detection-notification-visibility": false,
-  "github.copilot.enable": {
-    "*": false,
-    "plaintext": false,
-    "markdown": false,
-    "scminput": false,
-    "typescript": true,
-    "pip-requirements": false
-  }
+  "postman.settings.dotenv-detection-notification-visibility": false
 }
