@@ -13,9 +13,8 @@ const BullseyeTarget: React.FC<BullseyeTargetProps> = ({
   const [isHovering, setIsHovering] = useState(false);
   const [activating, setActivating] = useState(false);
   const hoverTimer = useRef<NodeJS.Timeout | null>(null);
-  const HOVER_DURATION = 4000; // 4 seconds
+  const HOVER_DURATION = 4000;
 
-  // Handle hover state and inform parent component
   const handleMouseEnter = () => {
     setIsHovering(true);
     onHoverChange(true);
@@ -26,7 +25,6 @@ const BullseyeTarget: React.FC<BullseyeTargetProps> = ({
     onHoverChange(false);
   };
 
-  // Manage hover state and timing
   useEffect(() => {
     if (isHovering) {
       hoverTimer.current = setTimeout(() => {
