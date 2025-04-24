@@ -60,7 +60,16 @@ export class AuthController {
       });
 
       const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
-      res.redirect(`${frontendUrl}/auth-success`);
+      res.redirect(
+        `${frontendUrl}/${
+          user.user.hasCompletedOnboarding === true ? 'dashboard' : 'onboarding'
+        }`,
+      );
+      this.logger.log(
+        `User ${req.user.username} was redirected to ${frontendUrl}/${
+          user.user.hasCompletedOnboarding === true ? 'dashboard' : 'onboarding'
+        }`,
+      );
     } catch (error) {
       this.logger.error('Authentication failed', error);
       throw new InternalServerErrorException('Authentication failed');

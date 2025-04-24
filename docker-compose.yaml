@@ -131,6 +131,8 @@ services:
     environment:
       - NEXT_PUBLIC_BACKEND_AUTH_URL=http://localhost:3001
       - WATCHPACK_POLLING=true
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     networks:
       - app-network
     restart: always

@@ -9,6 +9,7 @@ import {
   NewUserGithub,
 } from '@app/common/github/github.schema';
 import { GithubUserDto } from '@app/dtos/github';
+import { Logger } from 'nestjs-pino';
 
 type UserWithGithub = {
   user: User;
@@ -20,6 +21,7 @@ export class UserService {
   constructor(
     @Inject(DRIZZLE_PROVIDER)
     private readonly db: NodePgDatabase,
+    private readonly logger: Logger,
   ) {}
 
   async findByGithubId(githubId: string): Promise<UserWithGithub | null> {
@@ -77,6 +79,29 @@ export class UserService {
 
     if (!result.length) {
       throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+  }
+
+  async updateGithubAccessToken(
+    userId: string,
+    accessToken: string,
+  ): Promise<void> {
+    this.logger.log(`Updating GitHub access token for user ${userId}`);
+
+    try {
+      await this.db
+        .update(userGithubSchema)
+        .set({ accessToken })
+        .where(eq(userGithubSchema.userId, userId));
+
+      this.logger.log(
+        `Successfully updated GitHub access token for user ${userId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to update GitHub access token: ${error.message}`,
+      );
+      throw error;
     }
   }
 }

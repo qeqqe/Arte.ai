@@ -62,6 +62,35 @@ export class ResumeService {
     }
   }
 
+  async uploadResumeText(text: string, userId: string): Promise<void> {
+    if (typeof text !== 'string') {
+      this.logger.error('Received non-string type for resume text', {
+        userId,
+        receivedType: typeof text,
+      });
+      throw new BadRequestException('Invalid resume text format received.');
+    }
+
+    if (text.trim().length === 0 || text.length > 4000) {
+      throw new BadRequestException(
+        'Resume text cannot be empty or exceed 4000 characters',
+      );
+    }
+
+    try {
+      await this.storeResumeText(userId, text);
+      this.logger.log('Successfully stored resume text', { userId });
+    } catch (error) {
+      this.logger.error('Failed to store resume text', {
+        error: error.message,
+        userId,
+      });
+      throw new ServiceUnavailableException(
+        'Failed to store resume text. Please try again.',
+      );
+    }
+  }
+
   private async storeResumeText(userId: string, text: string): Promise<void> {
     try {
       const result = await this.drizzle

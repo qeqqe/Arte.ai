@@ -1,5 +1,4 @@
 'use client';
-import Toast from '@/app/components/base/toast/Toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -8,11 +7,7 @@ export const useGetStartedHandler = () => {
   const router = useRouter();
 
   const handleError = (errorMessage: string) => {
-    Toast.notify({
-      type: 'error',
-      message: errorMessage,
-      duration: 5000,
-    });
+    console.error(errorMessage);
   };
 
   const handleGetStartedClick = async () => {
