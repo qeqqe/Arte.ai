@@ -15,7 +15,7 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  // const frontendUrl = configService.get<string>('FRONTEND_URL');
 
   app.useLogger(app.get(Logger));
 
@@ -24,7 +24,7 @@ async function bootstrap() {
   app.use(helmet());
 
   app.enableCors({
-    origin: frontendUrl,
+    origin: '*',
     credentials: true,
   });
 
