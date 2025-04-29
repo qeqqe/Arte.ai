@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Github, Loader2 } from 'lucide-react';
+import { Github, Loader2, Star, GitFork, BookOpen } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { TopRepository } from '@/types/onboarding/githubData';
@@ -16,7 +16,7 @@ export default function GithubAgreement({
   updateData,
 }: AgreementStepProps) {
   const [agreed, setAgreed] = useState(data?.agreed || false);
-  const [userGithubData, setUserGithubData] = useState<TopRepository | null>(
+  const [userGithubData, setUserGithubData] = useState<TopRepository[] | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +39,28 @@ export default function GithubAgreement({
         setFetchComplete(true);
       }
     }
+  };
+
+  // Language color mapping for visual display
+  const languageColors: Record<string, string> = {
+    JavaScript: '#f1e05a',
+    TypeScript: '#3178c6',
+    Python: '#3572A5',
+    Java: '#b07219',
+    HTML: '#e34c26',
+    CSS: '#563d7c',
+    Ruby: '#701516',
+    Go: '#00ADD8',
+    Rust: '#dea584',
+    PHP: '#4F5D95',
+    Swift: '#ffac45',
+    Kotlin: '#A97BFF',
+    C: '#555555',
+    'C++': '#f34b7d',
+    'C#': '#178600',
+    Shell: '#89e051',
+    Dart: '#00B4AB',
+    Other: '#8257e5',
   };
 
   return (
@@ -120,6 +142,159 @@ export default function GithubAgreement({
       </div>
 
       {isLoading && <FetchingAnimation />}
+
+      {fetchComplete && userGithubData && userGithubData.length > 0 && (
+        <div className="mt-8 animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">
+              Your GitHub Universe
+            </h3>
+            <div className="text-sm text-gray-500">
+              {userGithubData.length} repositories found
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {userGithubData.map((repo, index) => {
+              const languages =
+                typeof repo.languages === 'string'
+                  ? JSON.parse(repo.languages)
+                  : repo.languages;
+
+              const mainLanguage =
+                repo.primaryLanguage || Object.keys(languages)[0] || 'Other';
+              const languageColor =
+                languageColors[mainLanguage] || languageColors.Other;
+              const delay = index * 0.1;
+
+              return (
+                <div
+                  key={repo.id || index}
+                  className="relative bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group"
+                  style={{
+                    animation: `fadeSlideIn 0.5s ease-out ${delay}s both`,
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 w-full h-1"
+                    style={{ backgroundColor: languageColor }}
+                  />
+
+                  <div className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-lg text-gray-900 hover:text-rose-600 transition-colors">
+                          <a
+                            href={repo.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center"
+                          >
+                            <BookOpen className="h-4 w-4 mr-2 text-gray-500 group-hover:text-rose-500 transition-colors" />
+                            {repo.name}
+                          </a>
+                        </h4>
+                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                          {repo.description || 'No description available'}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded-full group-hover:bg-rose-50 transition-colors">
+                        <Github className="h-5 w-5 text-gray-400 group-hover:text-rose-500 transition-colors" />
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                      <div className="flex space-x-3 text-xs text-gray-600">
+                        <div className="flex items-center">
+                          <Star className="h-3.5 w-3.5 mr-1 text-amber-400" />
+                          <span>{repo.stargazerCount}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <GitFork className="h-3.5 w-3.5 mr-1 text-blue-400" />
+                          <span>{repo.forkCount}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center text-xs">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full mr-1"
+                          style={{ backgroundColor: languageColor }}
+                        />
+                        <span>{mainLanguage}</span>
+                      </div>
+                    </div>
+
+                    {typeof languages === 'object' &&
+                      Object.keys(languages).length > 1 && (
+                        <div className="mt-3 flex items-center space-x-1.5">
+                          {Object.entries(languages)
+                            .slice(0, 5)
+                            .map(([lang, percentage], i) => {
+                              const color =
+                                languageColors[lang] || languageColors.Other;
+                              return (
+                                <div
+                                  key={i}
+                                  className="rounded-full"
+                                  style={{
+                                    backgroundColor: color,
+                                    height: '6px',
+                                    width: `${Math.max(6, (percentage as number) / 3)}px`,
+                                    opacity: 0.8,
+                                  }}
+                                  title={`${lang}: ${percentage}%`}
+                                />
+                              );
+                            })}
+                          {Object.keys(languages).length > 5 && (
+                            <span className="text-xs text-gray-500">
+                              +{Object.keys(languages).length - 5} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes fadeSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes pulse {
+          0%,
+          100% {
+            transform: scale(1);
+            opacity: 0.8;
+          }
+          50% {
+            transform: scale(1.1);
+            opacity: 1;
+          }
+        }
+        @keyframes progressBar {
+          0% {
+            width: 10%;
+          }
+          50% {
+            width: 70%;
+          }
+          100% {
+            width: 95%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

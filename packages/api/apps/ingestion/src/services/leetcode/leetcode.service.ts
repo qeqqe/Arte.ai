@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { UserPayload, DRIZZLE_PROVIDER } from '@app/common';
+import { UserPayload, DRIZZLE_PROVIDER, users } from '@app/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   NewUserLeetcode,
@@ -192,9 +192,12 @@ export class LeetcodeService {
               ranking,
             })
             .where(eq(UserLeetcodeSchema.userId, user.id));
+
+          this.updateOnboading(user.id);
         } else {
           this.logger.log(`Inserting new LeetCode data for user ${user.id}`);
           await this.drizzle.insert(UserLeetcodeSchema).values(leetcodeData);
+          this.updateOnboading(user.id);
         }
         this.logger.log(
           `Saved LeetCode data for user ${user.id} with username ${username}`,
@@ -369,6 +372,35 @@ export class LeetcodeService {
         error.stack,
       );
       throw error;
+    }
+  }
+
+  private async updateOnboading(userId) {
+    try {
+      const [userStatus] = await this.drizzle
+        .select({ onboardingStatus: users.onboardingStatus })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (userStatus) {
+        const currentStatus =
+          typeof userStatus.onboardingStatus === 'object'
+            ? userStatus.onboardingStatus
+            : {};
+        await this.drizzle
+          .update(users)
+          .set({
+            onboardingStatus: {
+              ...currentStatus,
+              leetcode: true,
+            },
+          })
+          .where(eq(users.id, userId));
+      }
+    } catch (error: any) {
+      this.logger.error(
+        `Unable to update the onboarding status for the user ${userId}`,
+      );
     }
   }
 }

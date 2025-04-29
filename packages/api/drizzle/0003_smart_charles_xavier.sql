@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "onboarding_status" jsonb DEFAULT '{"github": false, "leetcode": false, "resume": false}' NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" DROP COLUMN "has_completed_onboarding";

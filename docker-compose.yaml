@@ -126,8 +126,9 @@ services:
             - dist/
         - action: rebuild
           path: ./packages/client/package.json
-        - action: restart
+        - action: sync
           path: ./packages/client/pnpm-lock.yaml
+          target: /app/pnpm-lock.yaml
     environment:
       - NEXT_PUBLIC_BACKEND_AUTH_URL=http://localhost:3001
       - WATCHPACK_POLLING=true
@@ -135,7 +136,7 @@ services:
       - 'host.docker.internal:host-gateway'
     networks:
       - app-network
-    restart: always
+    restart: unless-stopped
 
   python-ml-service:
     build:
