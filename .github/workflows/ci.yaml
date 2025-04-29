@@ -84,8 +84,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
           HTTP_PORT: 3001
           JWT_SECRET: test_secret
-          JWT_EXPIRATION: 900
-          JWT_ACCESS_EXPIRATION: 15m
+          JWT_EXPIRATION: 7200
+          JWT_ACCESS_EXPIRATION: 2h
           JWT_REFRESH_EXPIRATION: 7d
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
@@ -100,8 +100,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
           HTTP_PORT: 3001
           JWT_SECRET: test_secret
-          JWT_EXPIRATION: 900
-          JWT_ACCESS_EXPIRATION: 15m
+          JWT_EXPIRATION: 7200
+          JWT_ACCESS_EXPIRATION: 2h
           JWT_REFRESH_EXPIRATION: 7d
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
@@ -118,8 +118,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:test@localhost:5432/sga
           HTTP_PORT: 3001
           JWT_SECRET: test_secret
-          JWT_EXPIRATION: 900
-          JWT_ACCESS_EXPIRATION: 15m
+          JWT_EXPIRATION: 7200
+          JWT_ACCESS_EXPIRATION: 2h
           JWT_REFRESH_EXPIRATION: 7d
           GITHUB_CLIENT_ID: test_client_id
           GITHUB_CLIENT_SECRET: test_client_secret
