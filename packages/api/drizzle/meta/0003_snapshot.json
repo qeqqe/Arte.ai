@@ -1,6 +1,6 @@
 {
-  "id": "01f2c3e5-6cf7-423f-ba53-cbb341172686",
-  "prevId": "73a9f052-5dff-44ef-a1ae-8cd8c61c3cf6",
+  "id": "444ae35a-3a87-484f-92c0-d87534114579",
+  "prevId": "01f2c3e5-6cf7-423f-ba53-cbb341172686",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -482,12 +482,12 @@
           "notNull": true,
           "default": "'[]'"
         },
-        "has_completed_onboarding": {
-          "name": "has_completed_onboarding",
-          "type": "boolean",
+        "onboarding_status": {
+          "name": "onboarding_status",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": "'{\"github\": false, \"leetcode\": false, \"resume\": false}'"
         },
         "created_at": {
           "name": "created_at",

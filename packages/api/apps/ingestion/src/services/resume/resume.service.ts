@@ -102,6 +102,29 @@ export class ResumeService {
         .where(eq(users.id, userId))
         .returning();
 
+      // update the onboarding status for resume
+      const [userStatus] = await this.drizzle
+        .select({ onboardingStatus: users.onboardingStatus })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (userStatus) {
+        const currentStatus =
+          typeof userStatus.onboardingStatus === 'object'
+            ? userStatus.onboardingStatus
+            : {};
+
+        await this.drizzle
+          .update(users)
+          .set({
+            onboardingStatus: {
+              ...currentStatus,
+              resume: true,
+            },
+          })
+          .where(eq(users.id, userId));
+      }
+
       if (!result.length) {
         throw new Error(`User with ID ${userId} not found`);
       }

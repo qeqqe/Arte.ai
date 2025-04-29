@@ -60,14 +60,28 @@ export class AuthController {
       });
 
       const frontendUrl = this.configService.getOrThrow<string>('FRONTEND_URL');
+      const onboardingStatus = user.user.onboardingStatus as {
+        github: boolean;
+        leetcode: boolean;
+        resume: boolean;
+      };
+
       res.redirect(
         `${frontendUrl}/${
-          user.user.hasCompletedOnboarding === true ? 'dashboard' : 'onboarding'
+          onboardingStatus.leetcode === true ||
+          onboardingStatus.github === true ||
+          onboardingStatus.resume === true
+            ? 'dashboard'
+            : 'onboarding'
         }`,
       );
       this.logger.log(
         `User ${req.user.username} was redirected to ${frontendUrl}/${
-          user.user.hasCompletedOnboarding === true ? 'dashboard' : 'onboarding'
+          onboardingStatus.leetcode === true ||
+          onboardingStatus.github === true ||
+          onboardingStatus.resume === true
+            ? 'dashboard'
+            : 'onboarding'
         }`,
       );
     } catch (error) {
