@@ -26,6 +26,11 @@ describe('AuthController', () => {
       id: 'uuid-1234',
       avatarUrl: 'https://github.com/avatar.jpg',
       refreshToken: null,
+      onboardingStatus: {
+        github: false,
+        leetcode: false,
+        resume: false,
+      },
     },
     github: {
       id: 'github-123',
@@ -115,7 +120,7 @@ describe('AuthController', () => {
           httpOnly: true,
           secure: false,
           sameSite: 'lax',
-          maxAge: 15 * 60 * 1000,
+          maxAge: 120 * 60 * 1000, // 2h
         }),
       );
 
@@ -126,13 +131,13 @@ describe('AuthController', () => {
           httpOnly: true,
           secure: false,
           sameSite: 'lax',
-          maxAge: 7 * 24 * 60 * 60 * 1000,
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
         }),
       );
 
       // Verify redirect
       expect(mockResponse.redirect).toHaveBeenCalledWith(
-        'http://localhost:3000/auth-success',
+        'http://localhost:3000/onboarding',
       );
     });
 
