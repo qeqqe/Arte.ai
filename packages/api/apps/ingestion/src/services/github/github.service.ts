@@ -6,7 +6,6 @@ import { eq } from 'drizzle-orm';
 import { Logger } from 'nestjs-pino';
 import { TopRepository } from '../../types/github-repo.types';
 import { DRIZZLE_PROVIDER } from '@app/common/drizzle';
-import { users } from '@app/common';
 
 @Injectable()
 export class GithubService {
@@ -19,13 +18,16 @@ export class GithubService {
 
   async getUserRepoData(userId: string): Promise<TopRepository[]> {
     try {
+      // Get user GitHub info (username and access token)
       const { username, access_token } = await this.fetchUserInfo(userId);
 
+      // Fetch pinned repositories using GraphQL API
       const pinnedRepos = await this.fetchPinnedRepositories(
         username,
         access_token,
       );
 
+      // Process and store repository data with additional information
       const data = await this.processAndStoreRepositories(pinnedRepos, userId);
 
       return data;
@@ -119,7 +121,7 @@ export class GithubService {
       `Processing ${repos.length} repositories for user ${userId}`,
     );
 
-    // process each repo sequentially to avoid overwhelming the API
+    // Process each repository sequentially to avoid overwhelming APIs
     for (const repo of repos) {
       try {
         // extract username and repo name from URL
@@ -127,7 +129,7 @@ export class GithubService {
         const username = urlParts[urlParts.length - 2];
         const repoName = urlParts[urlParts.length - 1];
 
-        // fetch rest of the data for repository
+        // Fetch rest of the data for repository
         const languages = await this.fetchLanguages(username, repoName);
         const readme = await this.fetchReadme(username, repoName);
 
@@ -146,36 +148,13 @@ export class GithubService {
           userId: userId,
         };
 
-        // update the onboarding status for GitHub
-        const [userStatus] = await this.drizzle
-          .select({ onboardingStatus: users.onboardingStatus })
-          .from(users)
-          .where(eq(users.id, userId));
-
-        if (userStatus) {
-          const currentStatus =
-            typeof userStatus.onboardingStatus === 'object'
-              ? userStatus.onboardingStatus
-              : {};
-
-          await this.drizzle
-            .update(users)
-            .set({
-              onboardingStatus: {
-                ...currentStatus,
-                github: true,
-              },
-            })
-            .where(eq(users.id, userId));
-        }
-
-        // insert repo and collect the result
+        // Insert repo and collect the result
         const insertResult = await this.drizzle
           .insert(userPinnedRepo)
           .values(repoData)
           .returning();
 
-        // add to results array
+        // Add to results array
         if (insertResult && insertResult.length > 0) {
           results.push(insertResult[0]);
         }

@@ -1,11 +1,17 @@
-import React from 'react';
+import { DashboardContent } from '@/app/components/dashboard/dashboard-content';
+import { DashboardSidebar } from '@/app/components/dashboard/dashboard-sidebar';
+import { DashboardProvider } from '@/app/components/dashboard/dashboard-context';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
-const Dashboard = () => {
+export default function DashboardPage() {
   return (
-    <div>
-      <h1></h1>
-    </div>
+    <SidebarProvider>
+      <DashboardProvider>
+        <div className="flex h-screen w-screen overflow-hidden">
+          <DashboardSidebar />
+          <DashboardContent />
+        </div>
+      </DashboardProvider>
+    </SidebarProvider>
   );
-};
-
-export default Dashboard;
+}
