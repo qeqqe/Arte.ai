@@ -1,8 +1,5 @@
 import TanStackProvider from '../providers/tanstack-provider';
-import { Inter } from 'next/font/google';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({
   children,
@@ -11,7 +8,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body>
         <TanStackProvider>{children}</TanStackProvider>
       </body>
     </html>

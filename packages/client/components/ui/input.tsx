@@ -1,5 +1,6 @@
 import * as React from 'react';
-import classNames from '@/utils/classnames';
+
+import classNames from 'classnames';
 
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   return (

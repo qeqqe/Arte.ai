@@ -6,8 +6,15 @@ export async function GET(request: NextRequest) {
 
   if (!accessToken) return redirect('/login');
 
+  // For debugging
+  console.log(
+    'Making API request with token',
+    accessToken.substring(0, 10) + '...'
+  );
+
   try {
-    const ingestionUrl = process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL;
+    // We need to use a more direct network approach
+    const ingestionUrl = 'http://host.docker.internal:3002';
     console.log(
       `Connecting to ingestion service at: ${ingestionUrl}/github/user-github`
     );
