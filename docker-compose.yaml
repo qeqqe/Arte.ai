@@ -105,6 +105,42 @@ services:
       - 8.8.8.8
       - 8.8.4.4
 
+  api-gateway:
+    build:
+      context: ./packages/api
+      dockerfile: apps/api-gateway/Dockerfile
+      target: development
+    command: sh -c '/wait-for.sh rabbitmq 5672 -- pnpm run start:dev api-gateway'
+    env_file:
+      - ./packages/api/apps/api-gateway/.env
+    ports:
+      - '3004:3004'
+    volumes:
+      - /app/node_modules/
+      - /app/apps/api-gateway/node_modules/
+    develop:
+      watch:
+        - action: sync
+          path: ./packages/api
+          target: /app
+          ignore:
+            - node_modules/
+            - .git/
+            - dist/
+        - action: rebuild
+          path: package.json
+    networks:
+      - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
   client:
     build:
       context: ./packages/client

@@ -12,6 +12,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { OpenAi } from './services/open-ai-service/open-ai.service';
 import { OpenAiController } from './controller/open-ai/open-ai.controller';
 
+const SERVICE_NAME = 'ANALYSIS';
+
 @Module({
   imports: [
     LoggerModule,
@@ -26,7 +28,7 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
         '.env',
       ],
     }),
-    RmqModule.register({ name: 'ANALYSIS_SERVICE' }),
+    RmqModule.register({ name: `${SERVICE_NAME}_QUEUE` }),
     ClientsModule.registerAsync([
       {
         name: 'INGESTION_SERVICE',
@@ -46,6 +48,11 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
             queueOptions: {
               durable: true,
             },
+            prefetchCount: parseInt(
+              configService.get<string>('RABBITMQ_PREFETCH_COUNT', '10'),
+              10,
+            ),
+            noAck: configService.get<boolean>('RABBITMQ_NO_ACK', false),
           },
         }),
         inject: [ConfigService],

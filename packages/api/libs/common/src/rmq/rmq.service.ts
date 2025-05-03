@@ -9,28 +9,44 @@ export class RmqService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  getOptions(queue: string, noAck = true): RmqOptions {
+  getOptions(queue: string, noAck = false): RmqOptions {
+    const prefetchCount = parseInt(
+      this.configService.get<string>('RABBITMQ_PREFETCH_COUNT', '10'),
+      10,
+    );
+    const noAckValue = this.configService.get<boolean>(
+      'RABBITMQ_NO_ACK',
+      false,
+    );
+
     return {
       transport: Transport.RMQ,
       options: {
-        urls: [this.configService.getOrThrow<string>('RABBITMQ_URI')],
-        queue: queue,
-        noAck,
-        persistent: true,
+        urls: [
+          this.configService.get<string>(
+            'RABBITMQ_URI',
+            'amqp://guest:guest@rabbitmq:5672',
+          ),
+        ],
+        queue,
         queueOptions: {
           durable: true,
-          arguments: {
-            'x-message-ttl': 300000,
-          },
         },
+        prefetchCount,
+        noAck: noAck ? noAck : noAckValue,
+        persistent: true,
       },
     };
   }
 
-  ack(context: RmqContext) {
+  acknowledgeMessage(context: RmqContext) {
     const channel = context.getChannelRef();
-    const originalMessage = context.getMessage();
-    channel.ack(originalMessage);
+    const message = context.getMessage();
+    channel.ack(message);
+  }
+
+  ack(context: RmqContext) {
+    this.acknowledgeMessage(context);
   }
 
   async purgeQueue(queueName: string): Promise<void> {
