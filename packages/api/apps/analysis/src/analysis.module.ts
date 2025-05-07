@@ -26,7 +26,7 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
         '.env',
       ],
     }),
-    RmqModule.register({ name: 'ANALYSIS_SERVICE' }),
+    RmqModule.register({ name: 'ANALYSIS_QUEUE' }),
     ClientsModule.registerAsync([
       {
         name: 'INGESTION_SERVICE',
@@ -39,13 +39,15 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
                 'amqp://guest:guest@rabbitmq:5672',
               ),
             ],
-            queue: configService.get<string>(
-              'INGESTION_QUEUE_NAME',
-              'INGESTION_QUEUE',
-            ),
+            queue: 'INGESTION_QUEUE',
             queueOptions: {
               durable: true,
             },
+            prefetchCount: parseInt(
+              configService.get<string>('RABBITMQ_PREFETCH_COUNT', '10'),
+              10,
+            ),
+            noAck: configService.get<boolean>('RABBITMQ_NO_ACK', false),
           },
         }),
         inject: [ConfigService],

@@ -2,27 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { AnalysisModule } from './analysis.module';
 import { Logger } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { RmqService } from '@app/common/rmq';
 import * as cookieParser from 'cookie-parser';
+import { ValidationPipe } from '@nestjs/common';
+
 async function bootstrap() {
   const app = await NestFactory.create(AnalysisModule);
   const configService = app.get<ConfigService>(ConfigService);
+  const rmqService = app.get<RmqService>(RmqService);
   const logger = app.get<Logger>(Logger);
 
   app.useLogger(logger);
   app.use(cookieParser());
-  // Connecting to RMQ with consistent settings
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [configService.get<string>('RABBITMQ_URI')],
-      queue: 'ANALYSIS_SERVICE',
-      queueOptions: {
-        durable: true,
-      },
-      noAck: true,
-    },
-  });
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+  const queueName = 'ANALYSIS_QUEUE';
+
+  // connect to rmq with consistent settings
+  app.connectMicroservice(rmqService.getOptions(queueName));
 
   logger.log('Starting analysis microservice');
   await app.startAllMicroservices();

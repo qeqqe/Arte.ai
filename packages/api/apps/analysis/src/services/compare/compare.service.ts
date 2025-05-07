@@ -1,9 +1,9 @@
 import { DRIZZLE_PROVIDER, users } from '@app/common';
-import { linkedinJobs } from '@app/common/jobpost';
+import { linkedinJobs, userFetchedJobs } from '@app/common/jobpost';
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import * as schema from '@app/common/jobpost';
 import { HttpService } from '@nestjs/axios';
 import { OpenAi } from '../open-ai-service/open-ai.service';
@@ -51,6 +51,18 @@ export class CompareService {
         await this.openAiService.generateSkillGapAnalysis(
           userProcessedSkills,
           jobInfo.processedSkills,
+        );
+
+      await this.drizzle
+        .update(userFetchedJobs)
+        .set({
+          comparison: analysisResponse as unknown as JSON,
+        } as any)
+        .where(
+          and(
+            eq(userFetchedJobs.userId, userId),
+            eq(userFetchedJobs.linkedinJobSchemaId, jobId),
+          ),
         );
 
       this.storeInCache(cacheKey, analysisResponse);

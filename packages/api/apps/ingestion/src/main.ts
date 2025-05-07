@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import * as cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { RmqService } from '@app/common/rmq';
 
 async function bootstrap() {
   const app = await NestFactory.create(IngestionModule, {
@@ -15,16 +15,20 @@ async function bootstrap() {
   });
 
   const configService = app.get(ConfigService);
-  // const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const rmqService = app.get<RmqService>(RmqService);
+  const logger = app.get(Logger);
+  const frontendUrl = configService.get<string>(
+    'ALLOWED_ORIGINS',
+    'http://localhost:3000',
+  );
 
-  app.useLogger(app.get(Logger));
-
+  app.useLogger(logger);
   app.use(cookieParser());
   app.use(compression());
   app.use(helmet());
 
   app.enableCors({
-    origin: '*',
+    origin: [frontendUrl],
     credentials: true,
   });
 
@@ -35,56 +39,21 @@ async function bootstrap() {
     }),
   );
 
-  const server = app.getHttpAdapter().getInstance();
+  const queueName = 'INGESTION_QUEUE';
 
-  if (server && server._router && server._router.stack) {
-    const routes = server._router.stack
-      .filter((layer) => layer.route)
-      .map((layer) => {
-        const route = layer.route;
-        const methods = Object.keys(route.methods)
-          .map((m) => m.toUpperCase())
-          .join(',');
-        return {
-          path: route.path,
-          method: methods,
-        };
-      });
+  app.connectMicroservice(rmqService.getOptions(queueName));
 
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.RMQ,
-      options: {
-        urls: [
-          configService.get<string>(
-            'RABBITMQ_URI',
-            'amqp://guest:guest@rabbitmq:5672',
-          ),
-        ],
-        queue: configService.get<string>(
-          'INGESTION_QUEUE_NAME',
-          'INGESTION_QUEUE',
-        ),
-        queueOptions: {
-          durable: true,
-        },
-        prefetchCount: 10,
-        noAck: false,
-        persistent: true,
-      },
-    });
-
-    routes.forEach((r) => console.log(`${r.method} ${r.path}`));
-  } else {
-    console.log(
-      'Unable to retrieve routes - server structure is different than expected',
-    );
-  }
+  logger.log('Starting ingestion microservice');
+  await app.startAllMicroservices();
 
   const port = configService.get<number>('HTTP_PORT', 3002);
   await app.listen(port);
 
-  const logger = app.get(Logger);
-  logger.log(`Ingestion service running on port ${port}`);
+  logger.log(`Ingestion service running on HTTP port ${port}`);
+  logger.log('RabbitMQ microservice is listening for messages');
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('Failed to start ingestion service:', error);
+  process.exit(1);
+});

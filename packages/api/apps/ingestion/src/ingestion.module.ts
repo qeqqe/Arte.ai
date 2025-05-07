@@ -43,20 +43,18 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         NODE_ENV: Joi.string().valid('development', 'production').required(),
         RABBITMQ_URI: Joi.string().required(),
         HTTP_PORT: Joi.number().required(),
-        FRONTEND_URL: Joi.string().required(),
         PYTHON_URL: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         DATABASE_URL: Joi.string().required(),
         OPENAI_API_KEY: Joi.string().required(),
         ALLOWED_ORIGINS: Joi.string().required(),
-        JOB_SCRAPER_URL: Joi.string().required(),
       }),
     }),
-    RmqModule.register({ name: 'INGESTION_SERVICE' }),
+    RmqModule.register({ name: 'INGESTION_QUEUE' }),
     ClientsModule.registerAsync([
       {
         name: 'ANALYSIS_SERVICE',
-        useFactory: async (configService: ConfigService) => ({
+        useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
             urls: [
@@ -65,7 +63,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
                 'amqp://guest:guest@rabbitmq:5672',
               ),
             ],
-            queue: 'ANALYSIS_SERVICE',
+            queue: 'ANALYSIS_QUEUE',
             queueOptions: {
               durable: true,
             },

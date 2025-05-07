@@ -1,0 +1,1 @@
+ALTER TABLE "user_saved_jobs" ADD COLUMN "comparison" jsonb DEFAULT '{}' NOT NULL;

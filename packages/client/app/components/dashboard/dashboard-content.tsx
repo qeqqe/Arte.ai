@@ -57,7 +57,7 @@ export function DashboardContent() {
               </div>
               {activeView === 'job-analysis' && (
                 <Button className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-xs sm:text-sm whitespace-nowrap">
-                  <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                  <Plus   className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   <span className="hidden sm:inline">Compare to New Job</span>
                   <span className="sm:hidden">Compare</span>
                 </Button>
