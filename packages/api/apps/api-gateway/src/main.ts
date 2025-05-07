@@ -25,10 +25,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  const queueName = configService.get<string>(
-    'API_GATEWAY_QUEUE_NAME',
-    'API_GATEWAY_QUEUE',
-  );
+  const queueName = configService.get<string>('API_GATEWAY_QUEUE');
 
   app.connectMicroservice(rmqService.getOptions(queueName));
 

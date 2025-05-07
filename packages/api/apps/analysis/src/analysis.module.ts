@@ -12,8 +12,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { OpenAi } from './services/open-ai-service/open-ai.service';
 import { OpenAiController } from './controller/open-ai/open-ai.controller';
 
-const SERVICE_NAME = 'ANALYSIS';
-
 @Module({
   imports: [
     LoggerModule,
@@ -28,7 +26,7 @@ const SERVICE_NAME = 'ANALYSIS';
         '.env',
       ],
     }),
-    RmqModule.register({ name: `${SERVICE_NAME}_QUEUE` }),
+    RmqModule.register({ name: 'ANALYSIS_QUEUE' }),
     ClientsModule.registerAsync([
       {
         name: 'INGESTION_SERVICE',
@@ -41,10 +39,7 @@ const SERVICE_NAME = 'ANALYSIS';
                 'amqp://guest:guest@rabbitmq:5672',
               ),
             ],
-            queue: configService.get<string>(
-              'INGESTION_QUEUE_NAME',
-              'INGESTION_QUEUE',
-            ),
+            queue: 'INGESTION_QUEUE',
             queueOptions: {
               durable: true,
             },

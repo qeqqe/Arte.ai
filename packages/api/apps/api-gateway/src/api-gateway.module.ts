@@ -15,6 +15,7 @@ const QUEUE_NAMES = {
 
 @Module({
   imports: [
+    DrizzleModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: [

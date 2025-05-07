@@ -24,7 +24,7 @@ async function bootstrap() {
   });
   app.useLogger(logger);
 
-  const queueName = configService.get<string>('AUTH_QUEUE_NAME', 'AUTH_QUEUE');
+  const queueName = 'AUTH_QUEUE';
 
   app.connectMicroservice(rmqService.getOptions(queueName));
 

@@ -33,6 +33,7 @@ export const userFetchedJobs = pgTable(
     linkedinJobSchemaId: uuid('linkedin_job_schema_id')
       .notNull()
       .references(() => linkedinJobs.id, { onDelete: 'cascade' }),
+    comparison: jsonb('comparison').default('{}').notNull(),
     savedAt: timestamp('saved_at').defaultNow().notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.linkedinJobSchemaId] })],

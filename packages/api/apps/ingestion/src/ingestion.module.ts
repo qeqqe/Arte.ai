@@ -50,11 +50,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         ALLOWED_ORIGINS: Joi.string().required(),
       }),
     }),
-    RmqModule.register({ name: 'INGESTION_SERVICE' }),
+    RmqModule.register({ name: 'INGESTION_QUEUE' }),
     ClientsModule.registerAsync([
       {
         name: 'ANALYSIS_SERVICE',
-        useFactory: async (configService: ConfigService) => ({
+        useFactory: (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
             urls: [
@@ -63,7 +63,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
                 'amqp://guest:guest@rabbitmq:5672',
               ),
             ],
-            queue: 'ANALYSIS_SERVICE',
+            queue: 'ANALYSIS_QUEUE',
             queueOptions: {
               durable: true,
             },

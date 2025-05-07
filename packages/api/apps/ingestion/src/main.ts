@@ -39,10 +39,7 @@ async function bootstrap() {
     }),
   );
 
-  const queueName = configService.get<string>(
-    'INGESTION_QUEUE_NAME',
-    'INGESTION_QUEUE',
-  );
+  const queueName = 'INGESTION_QUEUE';
 
   app.connectMicroservice(rmqService.getOptions(queueName));
 

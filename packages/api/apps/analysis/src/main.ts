@@ -16,10 +16,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  const queueName = configService.get<string>(
-    'ANALYSIS_QUEUE_NAME',
-    'ANALYSIS_QUEUE',
-  );
+  const queueName = 'ANALYSIS_QUEUE';
 
   // connect to rmq with consistent settings
   app.connectMicroservice(rmqService.getOptions(queueName));
