@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ApiGatewayController } from './api-gateway.controller';
-import { ApiGatewayService } from './api-gateway.service';
-import { AuthModule, DrizzleModule } from '@app/common';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
+import { AuthModule, DrizzleModule } from '@app/common';
 import { RmqModule } from '@app/common/rmq';
+import { DashboardController } from './controllers/dashboard/dashboard.controller';
+import { DashboardService } from './services/dashboard/dashboard.service';
+import { HttpModule } from '@nestjs/axios';
 import { LoggerModule } from '@app/common';
 
 const QUEUE_NAMES = {
@@ -24,14 +25,14 @@ const QUEUE_NAMES = {
         '.env',
       ],
     }),
+    HttpModule,
     LoggerModule,
-    DrizzleModule,
     AuthModule,
     RmqModule.register({ name: QUEUE_NAMES.ANALYSIS }),
     RmqModule.register({ name: QUEUE_NAMES.INGESTION }),
     RmqModule.register({ name: QUEUE_NAMES.AUTH }),
   ],
-  controllers: [ApiGatewayController],
-  providers: [ApiGatewayService],
+  controllers: [DashboardController],
+  providers: [DashboardService],
 })
 export class ApiGatewayModule {}
