@@ -12,7 +12,8 @@ export const users = pgTable('users', {
   lastLogin: timestamp('last_login').defaultNow().notNull(),
   userProcessedSkills: jsonb('user_proccessed_skills').notNull().default('[]'),
   onboardingStatus: jsonb('onboarding_status')
-    .default('{"github": false, "leetcode": false, "resume": false}')
+    .$type<{ github: boolean; leetcode: boolean; resume: boolean }>()
+    .default({ github: false, leetcode: false, resume: false })
     .notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
