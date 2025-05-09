@@ -1,0 +1,2 @@
+ALTER TABLE "user_saved_jobs" ALTER COLUMN "comparison" DROP DEFAULT;--> statement-breakpoint
+ALTER TABLE "users" ALTER COLUMN "onboarding_status" SET DEFAULT '{"github":false,"leetcode":false,"resume":false}'::jsonb;

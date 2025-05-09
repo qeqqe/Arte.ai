@@ -8,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from '../user';
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
+import { SkillGapAnalysis } from './comparison.types';
 
 export const linkedinJobs = pgTable('linkedin_jobs', {
   id: uuid('id').primaryKey().defaultRandom().unique(),
@@ -33,7 +34,19 @@ export const userFetchedJobs = pgTable(
     linkedinJobSchemaId: uuid('linkedin_job_schema_id')
       .notNull()
       .references(() => linkedinJobs.id, { onDelete: 'cascade' }),
-    comparison: jsonb('comparison').default('{}').notNull(),
+    comparison: jsonb('comparison')
+      .$type<SkillGapAnalysis>()
+      .$default(() => ({
+        matchedSkills: [],
+        gapAnalysis: [],
+        overallScore: { value: 0, category: 'insufficient' },
+        recommendations: [],
+        insights: '',
+        metadata: {
+          generatedAt: new Date().toISOString(),
+        },
+      }))
+      .notNull(),
     savedAt: timestamp('saved_at').defaultNow().notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.linkedinJobSchemaId] })],
