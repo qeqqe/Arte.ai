@@ -47,12 +47,35 @@ export class CompareService {
         this.getUserSkills(userId),
       ]);
 
+      // First check if a user-job relationship exists, if not create it
+      const existingRelation = await this.drizzle
+        .select()
+        .from(userFetchedJobs)
+        .where(
+          and(
+            eq(userFetchedJobs.userId, userId),
+            eq(userFetchedJobs.linkedinJobSchemaId, jobInfo.id),
+          ),
+        )
+        .limit(1);
+
+      if (existingRelation.length === 0) {
+        this.logger.log(`Creating new user-job relation for job ${jobId}`);
+        // Create new relation if it doesn't exist
+        await this.drizzle.insert(userFetchedJobs).values({
+          userId,
+          linkedinJobSchemaId: jobInfo.id,
+          // Default comparison object will be used from the schema
+        });
+      }
+
       const analysisResponse =
         await this.openAiService.generateSkillGapAnalysis(
           userProcessedSkills,
           jobInfo.processedSkills,
         );
 
+      // Now update with the internal UUID, not the LinkedIn job ID
       await this.drizzle
         .update(userFetchedJobs)
         .set({
@@ -61,7 +84,7 @@ export class CompareService {
         .where(
           and(
             eq(userFetchedJobs.userId, userId),
-            eq(userFetchedJobs.linkedinJobSchemaId, jobId),
+            eq(userFetchedJobs.linkedinJobSchemaId, jobInfo.id), // Use the internal ID
           ),
         );
 
@@ -81,6 +104,7 @@ export class CompareService {
     // get job data from database
     let jobInfo = await this.drizzle
       .select({
+        id: linkedinJobs.id, // Include the internal UUID
         jobInfo: linkedinJobs.jobInfo,
         processedSkills: linkedinJobs.processedSkills,
       })
@@ -98,6 +122,7 @@ export class CompareService {
 
       jobInfo = await this.drizzle
         .select({
+          id: linkedinJobs.id, // Include the internal UUID
           jobInfo: linkedinJobs.jobInfo,
           processedSkills: linkedinJobs.processedSkills,
         })

@@ -251,33 +251,71 @@ export class OpenAi implements OnModuleInit {
     additionalContext?: string,
   ): string {
     return `
-      I need a detailed analysis of the skill gap between a candidate and job requirements.
-      
-      ## CANDIDATE SKILLS
-      ${JSON.stringify(candidateSkills, null, 2)}
-      
-      ## JOB REQUIREMENTS
-      ${JSON.stringify(jobRequirements, null, 2)}
-      
-      ${
-        additionalContext ? `## ADDITIONAL CONTEXT\n${additionalContext}\n` : ''
+    I need a detailed analysis of the skill gap between a candidate and job requirements.
+    
+    ## CANDIDATE SKILLS
+    ${JSON.stringify(candidateSkills, null, 2)}
+    
+    ## JOB REQUIREMENTS
+    ${JSON.stringify(jobRequirements, null, 2)}
+    
+    ${additionalContext ? `## ADDITIONAL CONTEXT\n${additionalContext}\n` : ''}
+    
+    Analyze the gap between candidate skills and job requirements. For each skill:
+    - Evaluate the candidate's proficiency level vs. required level
+    - Calculate match percentage
+    - Identify missing skills completely
+    - Estimate time needed to close each gap
+    - Suggest specific learning resources
+    
+    Return a JSON response with EXACTLY this structure:
+    
+    {
+      "matchedSkills": [
+        {
+          "skill": "string", // Name of the skill
+          "candidateLevel": number, // 0-5 scale
+          "requiredLevel": number, // 0-5 scale
+          "matchPercentage": number, // 0-100
+          "details": "string" // Optional explanation
+        }
+      ],
+      "gapAnalysis": [
+        {
+          "skill": "string", // Name of skill with gap
+          "proficiencyGap": number, // Numerical gap
+          "estimatedTimeToClose": {
+            "value": number,
+            "unit": "days"|"weeks"|"months"
+          },
+          "priority": "high"|"medium"|"low",
+          "learningResources": [
+            {
+              "type": "course"|"book"|"documentation"|"project"|"other",
+              "title": "string",
+              "url": "string" // Optional
+            }
+          ]
+        }
+      ],
+      "overallScore": {
+        "value": number, // 0-100
+        "category": "excellent"|"good"|"adequate"|"insufficient"
+      },
+      "recommendations": [
+        {
+          "focus": "string", // Skill or area to focus on
+          "action": "string", // Specific action to take
+          "timeframe": "string" // Optional
+        }
+      ],
+      "insights": "string", // Overall insights
+      "metadata": {
+        "generatedAt": "string", // ISO timestamp
       }
-      
-      Please provide:
-      1. A skill gap analysis with match percentage for each required skill
-      2. Overall suitability score (0-100)
-      3. Specific recommendations for skills to develop
-      4. Estimated time to close each skill gap
-      5. Suggested learning resources for each missing skill
-      
-      Format the response as JSON with the following structure:
-      {
-        "matchedSkills": [...],
-        "gapAnalysis": [...],
-        "overallScore": number,
-        "recommendations": [...],
-        "insights": "string"
-      }
-    `;
+    }
+    
+    Ensure all fields conform exactly to the specified types. Do not include additional fields or nested properties not specified in this schema.
+  `;
   }
 }
