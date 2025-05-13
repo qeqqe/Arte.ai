@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ConnectedDataSources, RecentJobComparison } from '../types/dashboard';
 
 /**
- * Fetches the recent job comparisons for the user
+ * fetches the recent job comparisons for the user
  */
 export function useRecentJobComparisons() {
   const router = useRouter();
