@@ -9,11 +9,21 @@ import {
 import { users } from '../user';
 import { InferInsertModel, InferSelectModel, relations } from 'drizzle-orm';
 import { SkillGapAnalysis } from './comparison.types';
+import { Organization as OrganizationInterface } from '@app/common/jobpost';
 
 export const linkedinJobs = pgTable('linkedin_jobs', {
   id: uuid('id').primaryKey().defaultRandom().unique(),
   linkedinJobId: text('linkedin_job_id').notNull().unique(),
   jobInfo: text('job_info').notNull(),
+  organization: jsonb('organization')
+    .$type<OrganizationInterface>()
+    .default({
+      logo_url: '',
+      name: '',
+      location: '',
+    })
+    .notNull(),
+  postedTimeAgo: text('posted_time_ago').default('N/A').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   processedSkills: jsonb('processed_skills').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

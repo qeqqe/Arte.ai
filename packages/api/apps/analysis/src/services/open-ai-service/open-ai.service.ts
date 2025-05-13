@@ -4,6 +4,7 @@ import { Logger } from 'nestjs-pino';
 import OpenAI from 'openai';
 import { OnModuleInit } from '@nestjs/common';
 import { SkillsData } from '../../types/skills.types';
+import { ScrapedJob } from '@app/common/jobpost';
 
 @Injectable()
 export class OpenAi implements OnModuleInit {
@@ -21,8 +22,11 @@ export class OpenAi implements OnModuleInit {
     });
   }
 
-  async extractSkills(jobPosting: string): Promise<SkillsData> {
+  async extractSkills(jobPosting: ScrapedJob): Promise<SkillsData> {
     try {
+      const jobContent = jobPosting.description
+        ? jobPosting.description
+        : jobPosting.md;
       const response = await this.client.chat.completions.create({
         model: this.configService.get<string>('MODEL', 'gpt-4o'),
         messages: [
@@ -57,7 +61,7 @@ export class OpenAi implements OnModuleInit {
           },
           {
             role: 'user',
-            content: jobPosting,
+            content: jobContent,
           },
         ],
         response_format: { type: 'json_object' },
@@ -66,7 +70,7 @@ export class OpenAi implements OnModuleInit {
       const content = response.choices[0].message.content;
       if (!content) {
         this.logger.error(
-          `Falied to proccess the result for the job post ${jobPosting.slice(
+          `Falied to proccess the result for the job post ${jobContent.slice(
             20,
           )}`,
         );

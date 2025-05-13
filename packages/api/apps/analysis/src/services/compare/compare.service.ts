@@ -47,7 +47,7 @@ export class CompareService {
         this.getUserSkills(userId),
       ]);
 
-      // First check if a user-job relationship exists, if not create it
+      // first check if a user-job relationship exists, if not create it
       const existingRelation = await this.drizzle
         .select()
         .from(userFetchedJobs)
@@ -61,11 +61,9 @@ export class CompareService {
 
       if (existingRelation.length === 0) {
         this.logger.log(`Creating new user-job relation for job ${jobId}`);
-        // Create new relation if it doesn't exist
         await this.drizzle.insert(userFetchedJobs).values({
           userId,
           linkedinJobSchemaId: jobInfo.id,
-          // Default comparison object will be used from the schema
         });
       }
 
@@ -104,7 +102,7 @@ export class CompareService {
     // get job data from database
     let jobInfo = await this.drizzle
       .select({
-        id: linkedinJobs.id, // Include the internal UUID
+        id: linkedinJobs.id,
         jobInfo: linkedinJobs.jobInfo,
         processedSkills: linkedinJobs.processedSkills,
       })
@@ -122,7 +120,7 @@ export class CompareService {
 
       jobInfo = await this.drizzle
         .select({
-          id: linkedinJobs.id, // Include the internal UUID
+          id: linkedinJobs.id,
           jobInfo: linkedinJobs.jobInfo,
           processedSkills: linkedinJobs.processedSkills,
         })

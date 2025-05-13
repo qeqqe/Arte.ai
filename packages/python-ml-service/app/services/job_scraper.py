@@ -29,13 +29,13 @@ class JobScraper:
         url = f"{self.base_url}{job_id}"
         
         try:
-            job_text = self.get_job_description(url)
-            if not job_text:
+            job_data = self.get_job_description(url)
+            if not job_data or not job_data.get('description'):
                 self.logger.error(f"No job description found for ID: {job_id}")
                 raise ValueError("No job content found")
                 
-            self.logger.info(f"Successfully scraped job description for ID: {job_id}, length: {len(job_text)}")
-            return {"md": job_text}
+            self.logger.info(f"Successfully scraped job information for ID: {job_id}")
+            return job_data
         except Exception as e:
             self.logger.error(f"Error scraping job: {str(e)}")
             self.logger.error(traceback.format_exc())
@@ -74,84 +74,78 @@ class JobScraper:
             
             soup = BeautifulSoup(html_content, 'html.parser')
             
-            # Expanded set of selectors to find the job description
-            selectors = [
-                {"type": "class", "value": self.class_name},  # Primary LinkedIn selector
-                {"type": "selector", "value": ".description__text"},  # Alternative selector
-                {"type": "selector", "value": ".job-description"},  # General job description
-                {"type": "selector", "value": "div[class*='description']"},  # Any description div
-                {"type": "selector", "value": "section.description"},  # Section with description class
-                {"type": "selector", "value": ".jobs-description"},  # LinkedIn jobs description
-                {"type": "selector", "value": ".jobs-description__content"},  # LinkedIn content
-                {"type": "selector", "value": ".jobs-box__html-content"},  # LinkedIn box content
-                {"type": "selector", "value": "[data-test-id='job-details']"},  # LinkedIn test ID
-                {"type": "selector", "value": "[data-test-job-description]"}  # LinkedIn job description attribute
+            job_description_selectors = [
+                {"type": "class", "value": self.class_name},  # primary selector .show-more-less-html__markup
             ]
             
+            organization_selectors = {
+                "org_logo": {"type": "selector", "value": ".artdeco-entity-image.artdeco-entity-image--square-5"},
+                "org_name": {"type": "selector", "value": ".topcard__org-name-link"},
+                "work_location": {"type": "selector", "value": ".topcard__flavor.topcard__flavor--bullet"},
+                "timestamp": {"type": "selector", "value": ".posted-time-ago__text"}
+            }
+            
             job_description = None
+            primary_selector = {"type": "class", "value": self.class_name}  # show-more-less-html__markup
             
-            for selector in selectors:
-                if selector["type"] == "class":
-                    elements = soup.find_all(class_=selector["value"])
-                else:
-                    elements = soup.select(selector["value"])
-                
-                if elements:
-                    self.logger.info(f"Found job description with selector: {selector['value']}")
-                    job_description = elements[0].get_text(separator='\n', strip=True)
-                    break
+            elements = soup.find_all(class_=primary_selector["value"])
+            if elements:
+                self.logger.info(f"Found job description with primary selector: {primary_selector['value']}")
+                job_description = elements[0].get_text(separator='\n', strip=True)
             
+            # try other selectors
             if not job_description:
-                self.logger.info("Direct selectors failed, attempting pattern-based search")
-                potential_elements = soup.find_all(lambda tag: tag.name == "div" and 
-                                                 tag.attrs.get('class') and 
-                                                 any('job' in c.lower() for c in tag.attrs.get('class')) and
-                                                 any('description' in c.lower() for c in tag.attrs.get('class')))
-                
-                if potential_elements:
-                    self.logger.info(f"Found job description with pattern matching, element classes: {potential_elements[0].get('class')}")
-                    job_description = potential_elements[0].get_text(separator='\n', strip=True)
-            
-            if not job_description:
-                self.logger.info("Pattern matching failed, attempting text search approach")
-                # Find sections with keywords typically found in job descriptions
-                keywords = ["requirements", "responsibilities", "qualifications", "experience required", "skills"]
-                for keyword in keywords:
-                    pattern = re.compile(keyword, re.IGNORECASE)
-                    elements = soup.find_all(text=pattern)
+                for selector in job_description_selectors:
+                    if selector["type"] == "class":
+                        elements = soup.find_all(class_=selector["value"])
+                    else:
+                        elements = soup.select(selector["value"])
+                    
                     if elements:
-                        # Get parent container of the keyword
-                        parent = elements[0].parent
-                        while parent and parent.name not in ['div', 'section'] and len(parent.get_text()) < 500:
-                            parent = parent.parent
-                        
-                        if parent and len(parent.get_text()) > 200:
-                            self.logger.info(f"Found job description via keyword '{keyword}'")
-                            job_description = parent.get_text(separator='\n', strip=True)
-                            break
-            
-            # Last resort: get the largest text block that might be the job description
-            if not job_description:
-                self.logger.info("All approaches failed, attempting to extract largest text block")
-                text_blocks = []
-                for tag in soup.find_all(['div', 'section']):
-                    text = tag.get_text(strip=True)
-                    if len(text) > 200:  # Minimum size for job description
-                        text_blocks.append((len(text), text))
-                
-                if text_blocks:
-                    text_blocks.sort(reverse=True)  # Sort by size
-                    self.logger.info(f"Using largest text block as job description (size: {text_blocks[0][0]})")
-                    job_description = text_blocks[0][1]
+                        self.logger.info(f"Found job description with backup selector: {selector['value']}")
+                        job_description = elements[0].get_text(separator='\n', strip=True)
+                        break
             
             if not job_description:
-                # If still no description found, dump HTML structure for debugging
-                self.logger.error("Could not find job description with any method")
-                structure_report = self._generate_structure_report(soup)
-                self.logger.debug(f"HTML structure overview: {structure_report}")
-                raise ValueError("Job description not found in HTML")
+                job_description = self._find_job_description_alternative_methods(soup)
             
-            return job_description
+            org_info = {}
+            for info_type, selector in organization_selectors.items():
+                try:
+                    if selector["type"] == "class":
+                        elements = soup.find_all(class_=selector["value"])
+                    else:
+                        elements = soup.select(selector["value"])
+                    
+                    if elements:
+                        if info_type == "org_logo":
+                            logo_url = self._extract_logo_url(elements[0], soup)
+                            if logo_url:
+                                org_info[info_type] = logo_url
+                                self.logger.info(f"Found {info_type}: {logo_url[:50]}...")
+                            else:
+                                org_info[info_type] = ""
+                                self.logger.warning(f"Could not extract logo URL")
+                        else:
+                            # for text content fields
+                            org_info[info_type] = elements[0].get_text(strip=True)
+                            self.logger.info(f"Found {info_type} with selector: {selector['value']}")
+                except Exception as e:
+                    self.logger.warning(f"Error extracting {info_type}: {str(e)}")
+                    org_info[info_type] = ""
+            
+            result = {
+                "md": job_description,  # for backward compatibility
+                "description": job_description,
+                "organization": {
+                    "logo_url": org_info.get("org_logo", ""),
+                    "name": org_info.get("org_name", ""),
+                    "location": org_info.get("work_location", ""),
+                },
+                "posted_time_ago": org_info.get("timestamp", "")  # job post timestamp "2 weeks ago", "3 days ago"
+            }
+            
+            return result
             
         except requests.RequestException as e:
             self.logger.error(f"Request error: {str(e)}")
@@ -159,6 +153,110 @@ class JobScraper:
         except Exception as e:
             self.logger.error(f"Error extracting job description: {str(e)}")
             raise ValueError(f"Failed to extract job description: {str(e)}")
+    
+    def _extract_logo_url(self, element, soup):
+        """Extract logo URL using direct, effective approach"""
+        try:
+            self.logger.info("Extracting logo URL")
+            
+            # linkedin-specific selectors in order of specificity
+            selectors = [
+                "img.artdeco-entity-image",
+                "img.contextual-sign-in-modal__img",
+                "img.lazy-loaded",
+                "img[alt*='company']",
+                "img[alt*='logo']"
+            ]
+            
+            for selector in selectors:
+                image = soup.select_one(selector)
+                if image:
+                    if image.get("src") and image.get("src").startswith("http"):
+                        self.logger.info(f"Found logo URL with selector {selector}: {image.get('src')}")
+                        return image.get("src")
+                        
+                    # fallback
+                    elif image.get("data-delayed-url"):
+                        self.logger.info(f"Found logo URL (delayed) with selector {selector}: {image.get('data-delayed-url')}")
+                        return image.get("data-delayed-url")
+            
+            #  regex pattern as a fallback
+            pattern_image = soup.find("img", attrs={"class": re.compile(r".*company-logo.*|.*logo.*|.*entity-image.*")})
+            if pattern_image:
+                if pattern_image.get("src") and pattern_image.get("src").startswith("http"):
+                    self.logger.info(f"Found logo URL with regex pattern: {pattern_image.get('src')}")
+                    return pattern_image.get("src")
+                elif pattern_image.get("data-delayed-url"):
+                    self.logger.info(f"Found logo URL (delayed) with regex pattern: {pattern_image.get('data-delayed-url')}")
+                    return pattern_image.get("data-delayed-url")
+            
+            # last resort: just get any image
+            all_images = soup.find_all("img")
+            for img in all_images:
+                if img.get("src") and img.get("src").startswith("http"):
+                    self.logger.info(f"Using fallback image: {img.get('src')}")
+                    return img.get("src")
+                elif img.get("data-delayed-url"):
+                    self.logger.info(f"Using fallback delayed image: {img.get('data-delayed-url')}")
+                    return img.get("data-delayed-url")
+            
+            self.logger.warning("No logo URL found with any method")
+            return ""
+        except Exception as e:
+            self.logger.error(f"Error in _extract_logo_url: {str(e)}")
+            return ""
+    def _find_job_description_alternative_methods(self, soup):
+        """Try alternative methods to find job description"""
+        job_description = None
+        
+        self.logger.info("Direct selectors failed, attempting pattern-based search")
+        potential_elements = soup.find_all(lambda tag: tag.name == "div" and 
+                                         tag.attrs.get('class') and 
+                                         any('job' in c.lower() for c in tag.attrs.get('class')) and
+                                         any('description' in c.lower() for c in tag.attrs.get('class')))
+        
+        if potential_elements:
+            self.logger.info(f"Found job description with pattern matching, element classes: {potential_elements[0].get('class')}")
+            job_description = potential_elements[0].get_text(separator='\n', strip=True)
+        
+        if not job_description:
+            self.logger.info("Pattern matching failed, attempting text search approach")
+            keywords = ["requirements", "responsibilities", "qualifications", "experience required", "skills"]
+            for keyword in keywords:
+                pattern = re.compile(keyword, re.IGNORECASE)
+                elements = soup.find_all(text=pattern)
+                if elements:
+                    parent = elements[0].parent
+                    while parent and parent.name not in ['div', 'section'] and len(parent.get_text()) < 500:
+                        parent = parent.parent
+                    
+                    if parent and len(parent.get_text()) > 200:
+                        self.logger.info(f"Found job description via keyword '{keyword}'")
+                        job_description = parent.get_text(separator='\n', strip=True)
+                        break
+        
+        # Last resort: get the largest text block that might be the job description
+        if not job_description:
+            self.logger.info("All approaches failed, attempting to extract largest text block")
+            text_blocks = []
+            for tag in soup.find_all(['div', 'section']):
+                text = tag.get_text(strip=True)
+                if len(text) > 200:  # Minimum size for job description
+                    text_blocks.append((len(text), text))
+            
+            if text_blocks:
+                text_blocks.sort(reverse=True)  # Sort by size
+                self.logger.info(f"Using largest text block as job description (size: {text_blocks[0][0]})")
+                job_description = text_blocks[0][1]
+        
+        if not job_description:
+            # if no description found, dump HTML structure for debugging
+            self.logger.error("Could not find job description with any method")
+            structure_report = self._generate_structure_report(soup)
+            self.logger.debug(f"HTML structure overview: {structure_report}")
+            raise ValueError("Job description not found in HTML")
+        
+        return job_description
     
     def _generate_structure_report(self, soup):
         """Generate a brief report of the HTML structure to help debug scraping issues"""

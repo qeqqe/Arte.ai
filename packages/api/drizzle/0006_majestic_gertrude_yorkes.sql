@@ -1,0 +1,2 @@
+ALTER TABLE "linkedin_jobs" ADD COLUMN "organization" jsonb DEFAULT '{"logo_url":"","name":"","location":""}'::jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "linkedin_jobs" ADD COLUMN "posted_time_ago" text DEFAULT 'N/A' NOT NULL;
