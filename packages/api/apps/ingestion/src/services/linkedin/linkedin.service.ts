@@ -10,7 +10,8 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE_PROVIDER } from '@app/common';
-import { linkedinJobs, userFetchedJobs } from '@app/common/jobpost';
+import { ScrapedJob, userFetchedJobs } from '@app/common/jobpost';
+import { linkedinJobs, NewLinkedinJob } from '@app/common/jobpost';
 import { SkillsData } from '@app/common/jobpost/skills.types';
 import { ClientProxy } from '@nestjs/microservices';
 
@@ -29,7 +30,7 @@ export class LinkedinService {
 
   async scrapeJob(jobId: string, userId: string): Promise<SkillsData> {
     try {
-      const jobContent = await this.fetchJobContent(jobId);
+      const jobContent: ScrapedJob = await this.fetchJobContent(jobId);
 
       if (!jobContent) {
         throw new NotFoundException('No job content found');
@@ -40,10 +41,26 @@ export class LinkedinService {
       try {
         this.logger.log('Sending job content to analysis service');
 
+        this.logger.debug(
+          `Job content being sent: ${JSON.stringify({
+            md: jobContent.md || '',
+            description: jobContent.description || '',
+            organization: jobContent.organization || {
+              logo_url: '',
+              name: '',
+              location: '',
+            },
+            posted_time_ago: jobContent.posted_time_ago || '',
+          })}`,
+        );
+
         const processedJobData = await firstValueFrom(
           this.analysisService.send('extract_skills', jobContent),
         );
 
+        this.logger.log(
+          'Successfully received processed job data from analysis service',
+        );
         await this.storeJobPost(jobId, jobContent, processedJobData, userId);
         return processedJobData;
       } catch (analysisError) {
@@ -74,7 +91,7 @@ export class LinkedinService {
     }
   }
 
-  private async fetchJobContent(jobId: string): Promise<string | null> {
+  private async fetchJobContent(jobId: string): Promise<ScrapedJob | null> {
     const PYTHON_API_URL = this.configService.getOrThrow<string>('PYTHON_URL');
     this.logger.log(
       `Sending request to Python service: ${PYTHON_API_URL}/scrape-job?jobId=${jobId}`,
@@ -90,14 +107,45 @@ export class LinkedinService {
         }),
       );
 
-      if (resp?.data?.md) {
+      const scrapedJobData: ScrapedJob = {
+        md: '',
+        description: '',
+        organization: {
+          logo_url: '',
+          name: '',
+          location: '',
+        },
+        posted_time_ago: '',
+      };
+
+      if (resp?.data?.md && resp?.data?.description) {
         this.logger.log(
           `Successfully received job content from Python service: ${resp.data.md.substring(
             0,
             50,
           )}...`,
         );
-        return resp.data.md as string;
+
+        scrapedJobData.md = resp.data.md;
+        scrapedJobData.description = resp.data.description;
+
+        if (resp?.data?.organization) {
+          const org = {
+            logo_url: resp.data.organization.logo_url || '',
+            name: resp.data.organization.name || '',
+            location: resp.data.organization.location || '',
+          };
+
+          scrapedJobData.organization = org;
+          this.logger.log(`Organization processed: ${JSON.stringify(org)}`);
+        }
+
+        if (resp?.data?.posted_time_ago) {
+          scrapedJobData.posted_time_ago = resp.data.posted_time_ago;
+          this.logger.log(`Posted time ago: ${scrapedJobData.posted_time_ago}`);
+        }
+
+        return scrapedJobData;
       } else {
         this.logger.error(
           `Python service returned invalid response format: ${JSON.stringify(
@@ -135,7 +183,7 @@ export class LinkedinService {
 
   private async storeJobPost(
     linkedinJobId: string,
-    jobInfo: string,
+    scrapedData: ScrapedJob,
     processedJobData: SkillsData,
     userId: string,
   ): Promise<void> {
@@ -144,45 +192,104 @@ export class LinkedinService {
         `Starting transaction to store job ID: ${linkedinJobId} for user: ${userId}`,
       );
 
-      await this.drizzle.transaction(async (tx) => {
-        this.logger.log(`Inserting job into linkedinJobs table...`);
+      const jobDescriptionText = String(
+        scrapedData.description || scrapedData.md,
+      );
 
-        const [jobPost] = await tx
-          .insert(linkedinJobs)
-          .values({
-            linkedinJobId,
-            processedSkills: processedJobData as unknown as JSON,
-            jobInfo,
-          })
-          .onConflictDoUpdate({
-            target: linkedinJobs.linkedinJobId,
-            set: {
-              jobInfo,
+      const organization = {
+        logo_url: String(scrapedData.organization?.logo_url || ''),
+        name: String(scrapedData.organization?.name || ''),
+        location: String(scrapedData.organization?.location || ''),
+      };
+
+      const postedTimeAgo = String(scrapedData.posted_time_ago || 'N/A');
+
+      this.logger.log(
+        `Organization data for storage: ${JSON.stringify(organization)}`,
+      );
+      this.logger.log(`Posted time ago for storage: ${postedTimeAgo}`);
+
+      try {
+        await this.drizzle.transaction(async (tx) => {
+          this.logger.log(`Inserting job into linkedinJobs table...`);
+
+          try {
+            const orgObject = JSON.parse(JSON.stringify(organization));
+            this.logger.debug(
+              `Organization object after JSON stringify/parse: ${JSON.stringify(
+                orgObject,
+              )}`,
+            );
+
+            const orgJsonb = orgObject as unknown as JSON;
+
+            const insertValues = {
+              linkedinJobId: linkedinJobId,
+              jobInfo: jobDescriptionText,
               processedSkills: processedJobData as unknown as JSON,
-            },
-          })
-          .returning();
+              organization: orgJsonb,
+              postedTimeAgo: postedTimeAgo,
+            } as NewLinkedinJob;
 
-        this.logger.log(
-          `Job inserted/updated successfully with ID: ${jobPost.id}`,
+            this.logger.debug(
+              `Insert values prepared: ${JSON.stringify({
+                linkedinJobId,
+                jobInfoLength: jobDescriptionText.length,
+                hasProcessedSkills: !!processedJobData,
+                organization: orgObject,
+                postedTimeAgo,
+              })}`,
+            );
+
+            const [jobPost] = await tx
+              .insert(linkedinJobs)
+              .values(insertValues)
+              .onConflictDoUpdate({
+                target: linkedinJobs.linkedinJobId,
+                set: {
+                  jobInfo: jobDescriptionText,
+                  processedSkills: processedJobData as unknown as JSON,
+                  organization: orgJsonb,
+                  postedTimeAgo: postedTimeAgo,
+                  updatedAt: new Date(),
+                } as Partial<NewLinkedinJob>,
+              })
+              .returning();
+
+            this.logger.log(
+              `Job inserted/updated successfully with ID: ${jobPost.id}`,
+            );
+
+            this.logger.log(`Creating user-job relationship...`);
+            await tx
+              .insert(userFetchedJobs)
+              .values({
+                userId,
+                linkedinJobSchemaId: jobPost.id,
+              })
+              .onConflictDoNothing({
+                target: [
+                  userFetchedJobs.userId,
+                  userFetchedJobs.linkedinJobSchemaId,
+                ],
+              });
+
+            this.logger.log(`User-job relationship created or already exists`);
+          } catch (txError) {
+            this.logger.error(
+              `Transaction error: ${txError.message}`,
+              txError.stack,
+            );
+            throw txError;
+          }
+        });
+      } catch (dbError) {
+        this.logger.error(
+          `Database error during transaction: ${dbError.message}`,
+          dbError.stack,
         );
-
-        this.logger.log(`Creating user-job relationship...`);
-        await tx
-          .insert(userFetchedJobs)
-          .values({
-            userId,
-            linkedinJobSchemaId: jobPost.id,
-          })
-          .onConflictDoNothing({
-            target: [
-              userFetchedJobs.userId,
-              userFetchedJobs.linkedinJobSchemaId,
-            ],
-          });
-
-        this.logger.log(`User-job relationship created or already exists`);
-      });
+        throw dbError;
+      }
 
       this.logger.log(
         `Transaction completed: Job post stored successfully for jobId: ${linkedinJobId}, userId: ${userId}`,

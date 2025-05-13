@@ -145,7 +145,10 @@ export class ResumeService {
     return promiseRetry(
       async () => {
         const formData = new FormData();
-        formData.append('file', new Blob([file.buffer]), file.originalname);
+        const blob = new Blob([new Uint8Array(file.buffer)], {
+          type: file.mimetype,
+        });
+        formData.append('file', blob, file.originalname);
 
         const pythonUrl = this.configService.get(
           'PYTHON_URL',
