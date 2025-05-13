@@ -21,6 +21,8 @@ export class DashboardService {
           comparison: userFetchedJobs.comparison,
           jobInfo: linkedinJobs.jobInfo,
           processedSkills: linkedinJobs.processedSkills,
+          organization: linkedinJobs.organization,
+          postedTimeAgo: linkedinJobs.postedTimeAgo,
         })
         .from(userFetchedJobs)
         .innerJoin(

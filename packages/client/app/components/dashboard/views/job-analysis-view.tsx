@@ -165,14 +165,21 @@ export function JobAnalysisView() {
           .map((skill) => skill.skill);
       }
 
+      // Use organization data if available
       return {
         id: index + 1,
         title: jobInfo.title || 'Untitled Job',
-        company: jobInfo.company || 'Unknown Company',
-        location: jobInfo.location || 'Unknown',
-        logo: jobInfo.companyLogo || '/placeholder.svg?height=40&width=40',
+        company:
+          apiJob.organization?.name || jobInfo.company || 'Unknown Company',
+        location:
+          apiJob.organization?.location || jobInfo.location || 'Unknown',
+        logo:
+          apiJob.organization?.logo_url ||
+          jobInfo.companyLogo ||
+          '/placeholder.svg?height=40&width=40',
         comparison: apiJob.comparison,
         skillTags,
+        postedTimeAgo: apiJob.postedTimeAgo || '',
       };
     }) || analyzedJobs;
 
@@ -180,41 +187,58 @@ export function JobAnalysisView() {
     transformedJobs.length > 0 ? transformedJobs : analyzedJobs;
 
   return (
-    <div className="grid w-full gap-4 sm:gap-6 max-w-none">
-      <Card className="w-full">
-        <CardHeader className="px-4 sm:px-6">
+    <div className="grid w-full gap-5 sm:gap-7 max-w-none">
+      <Card className="w-full overflow-hidden shadow-md border-slate-200 bg-white hover:shadow-lg transition-shadow duration-300">
+        <CardHeader className="px-5 sm:px-7 bg-gradient-to-r from-slate-50 to-rose-50 border-b border-slate-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle>Analyzed Jobs</CardTitle>
-              <CardDescription className="mt-1">
-                Jobs you've already analyzed
+              <CardTitle className="text-slate-800 font-bold">
+                Analyzed Jobs
+              </CardTitle>
+              <CardDescription className="mt-1.5 text-slate-500">
+                Jobs you've already analyzed and compared to your profile
               </CardDescription>
             </div>
             <div className="flex items-center">
-              <Button className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-xs sm:text-sm">
-                <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="sm:inline">Compare to New Job</span>
+              <Button className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm text-xs sm:text-sm transition-colors">
+                <Plus className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <span>Compare to New Job</span>
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <div className="space-y-3 sm:space-y-4">
-            {displayJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
+        <CardContent className="px-5 sm:px-7 py-4 sm:py-5">
+          {displayJobs.length > 0 ? (
+            <div className="space-y-4 sm:space-y-5">
+              {displayJobs.map((job) => (
+                <JobCard key={job.id} job={job} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-10 px-4">
+              <div className="text-slate-400 mb-3">
+                <Plus className="h-12 w-12 mx-auto opacity-30" />
+              </div>
+              <p className="text-slate-500 mb-4">
+                No job analyses found. Start by comparing your profile to a job
+                posting.
+              </p>
+              <Button className="mt-2 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm">
+                Compare to New Job
+              </Button>
+            </div>
+          )}
         </CardContent>
-        <CardFooter className="border-t pt-3 sm:pt-4 px-4 sm:px-6 flex flex-col sm:flex-row justify-between gap-2">
+        <CardFooter className="border-t border-slate-100 pt-3 sm:pt-4 px-5 sm:px-7 flex flex-col sm:flex-row justify-between gap-3 bg-gradient-to-r from-slate-50 to-rose-50/30">
           <Button
             variant="outline"
-            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 text-xs sm:text-sm w-full sm:w-auto"
+            className="text-slate-600 border-slate-200 hover:bg-white hover:border-slate-300 hover:text-slate-800 text-xs sm:text-sm w-full sm:w-auto font-medium shadow-sm transition-colors"
           >
             Load More Jobs
           </Button>
           <Button
             variant="outline"
-            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 text-xs sm:text-sm w-full sm:w-auto"
+            className="text-rose-600 border-rose-200 hover:bg-white hover:border-rose-300 hover:text-rose-700 text-xs sm:text-sm w-full sm:w-auto font-medium shadow-sm transition-colors"
           >
             Compare Selected Jobs
           </Button>
@@ -224,7 +248,7 @@ export function JobAnalysisView() {
   );
 }
 
-function JobCard({ job }: { job: Job }) {
+function JobCard({ job, isLast = false }: { job: Job; isLast?: boolean }) {
   // Calculate match percentage from either format
   let matchPercentage = 0;
   if (job.comparison) {
@@ -237,73 +261,175 @@ function JobCard({ job }: { job: Job }) {
     }
   }
 
+  // Determine match color and text
+  const getMatchInfo = () => {
+    if (matchPercentage >= 85)
+      return {
+        bg: 'bg-emerald-500',
+        bgLight: 'bg-emerald-50',
+        text: 'text-emerald-700',
+        border: 'border-emerald-200',
+        label: 'Excellent Match',
+      };
+    if (matchPercentage >= 70)
+      return {
+        bg: 'bg-blue-500',
+        bgLight: 'bg-blue-50',
+        text: 'text-blue-700',
+        border: 'border-blue-200',
+        label: 'Good Match',
+      };
+    if (matchPercentage >= 50)
+      return {
+        bg: 'bg-amber-500',
+        bgLight: 'bg-amber-50',
+        text: 'text-amber-700',
+        border: 'border-amber-200',
+        label: 'Fair Match',
+      };
+    return {
+      bg: 'bg-rose-500',
+      bgLight: 'bg-rose-50',
+      text: 'text-rose-700',
+      border: 'border-rose-200',
+      label: 'Needs Development',
+    };
+  };
+
+  const matchInfo = getMatchInfo();
+
   // Extract skill tags
   const skillTags = job.skillTags || ['React', 'TypeScript', '+3 more'];
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-rose-100 hover:bg-rose-50 transition-colors">
-      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 rounded-md">
-        <AvatarImage src={job.logo || '/placeholder.svg'} alt={job.company} />
-        <AvatarFallback className="rounded-md bg-rose-100 text-rose-700">
-          {job.company.substring(0, 2)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-sm sm:text-base">{job.title}</h4>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          {job.company} • {job.location}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-1 sm:gap-2">
-          {skillTags.slice(0, 2).map((skill, index) => (
-            <Badge
-              key={index}
-              variant="outline"
-              className="bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs"
-            >
-              {skill}
-            </Badge>
-          ))}
+    <div
+      className={`rounded-xl border border-slate-200 bg-white hover:bg-blue-50/10 shadow-sm hover:shadow transition-all duration-200 group
+      ${isLast ? '' : 'mb-4'}`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-start p-0 overflow-hidden">
+        {/* Match Quality Indicator (left bar) */}
+        <div className={`w-full h-1 sm:w-1.5 sm:h-auto ${matchInfo.bg}`}></div>
 
-          {(skillTags.length > 2 || !skillTags.length) && (
-            <Badge
-              variant="outline"
-              className="bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs"
-            >
-              +{skillTags.length > 2 ? skillTags.length - 2 : 3} more
-            </Badge>
-          )}
-        </div>
-      </div>
-      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:gap-2 mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-t-0">
-        <div className="text-center sm:text-right">
-          <div className="text-xs sm:text-sm font-medium">Match</div>
-          <div
-            className={`text-sm sm:text-lg font-bold ${
-              matchPercentage >= 80
-                ? 'text-emerald-600'
-                : matchPercentage >= 70
-                  ? 'text-amber-600'
-                  : 'text-rose-600'
-            }`}
-          >
-            {matchPercentage}%
+        <div className="flex flex-col sm:flex-row w-full p-4">
+          {/* Company Logo + Match Badge */}
+          <div className="relative mb-3 sm:mb-0 sm:mr-4">
+            <div className="relative">
+              <Avatar className="h-14 w-14 sm:h-16 sm:w-16 rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                <AvatarImage
+                  src={job.logo || '/placeholder.svg'}
+                  alt={job.company}
+                  className="object-cover"
+                />
+                <AvatarFallback className="rounded-xl bg-gradient-to-br from-slate-50 to-slate-200 text-slate-600 font-semibold">
+                  {job.company.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+
+              {/* Match Badge */}
+              <div className="absolute -bottom-2 -right-2 sm:-right-3">
+                <div
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full border ${matchInfo.bgLight} ${matchInfo.border} ${matchInfo.text} text-xs font-semibold shadow-sm`}
+                >
+                  {matchPercentage}%
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 h-7 text-xs px-2"
-          >
-            View Details
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 h-7 text-xs px-2"
-          >
-            Compare
-          </Button>
+
+          <div className="flex flex-col sm:flex-row sm:items-start flex-1 gap-4">
+            {/* Job Info Area */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-semibold text-sm sm:text-base text-slate-800">
+                  {job.title}
+                </h4>
+                <span
+                  className={`inline-block px-2 py-0.5 text-xs rounded-full ${matchInfo.bgLight} ${matchInfo.text} font-medium`}
+                >
+                  {matchInfo.label}
+                </span>
+              </div>
+
+              <div className="flex items-center flex-wrap mt-1 text-xs sm:text-sm">
+                <span className="font-medium text-slate-700 mr-2">
+                  {job.company}
+                </span>
+                <span className="text-slate-500">{job.location}</span>
+              </div>
+
+              {/* Skills Section */}
+              <div className="mt-3">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                  <span className="text-xs font-medium text-slate-700">
+                    Key Skills
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {skillTags.slice(0, 3).map((skill, index) => (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className="bg-white border-slate-200 text-slate-700 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 text-xs py-0.5 px-2 transition-colors"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+
+                  {skillTags.length > 3 && (
+                    <Badge
+                      variant="outline"
+                      className="bg-white border-slate-200 text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 text-xs py-0.5 px-2 transition-colors"
+                    >
+                      +{skillTags.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Match + Actions Area */}
+            <div className="flex flex-row sm:flex-col items-center sm:items-stretch gap-3 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:min-w-[160px]">
+              {/* Match Visualization */}
+              <div className="flex-1 sm:mb-3 w-full">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="text-xs text-slate-500 font-medium">
+                    Skill Match
+                  </div>
+                  <span className={`text-xs font-semibold ${matchInfo.text}`}>
+                    {matchPercentage}%
+                  </span>
+                </div>
+
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden w-full">
+                  <div
+                    className={`h-full ${matchInfo.bg}`}
+                    style={{ width: `${matchPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex sm:flex-col gap-2 w-full">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium px-3 shadow-sm w-full"
+                >
+                  View Details
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 h-8 text-xs font-medium px-3 w-full"
+                >
+                  Compare
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

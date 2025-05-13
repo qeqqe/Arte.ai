@@ -87,11 +87,19 @@ export interface Comparison {
   [key: string]: any; // Allow other fields for flexibility
 }
 
+export interface Organization {
+  logo_url: string;
+  name: string;
+  location: string;
+}
+
 export interface RecentJobComparison {
   comparison: Comparison;
   jobInfo: string; // this is a string that needs to be parsed as JSON
   processedSkills: ProcessedSkills;
   parsedJobInfo?: JobInfo; // parse the jobInfo string into this object
+  organization?: Organization;
+  postedTimeAgo?: string;
 }
 
 export interface ConnectedDataSources {
