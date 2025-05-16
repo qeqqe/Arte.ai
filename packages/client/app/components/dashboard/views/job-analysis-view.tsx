@@ -189,7 +189,7 @@ export function JobAnalysisView() {
   return (
     <div className="grid w-full gap-5 sm:gap-7 max-w-none">
       <Card className="w-full overflow-hidden shadow-md border-slate-200 bg-white hover:shadow-lg transition-shadow duration-300">
-        <CardHeader className="px-5 sm:px-7 bg-gradient-to-r from-slate-50 to-rose-50 border-b border-slate-100">
+        <CardHeader className="px-5 sm:px-7 border-b border-slate-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <CardTitle className="text-slate-800 font-bold">

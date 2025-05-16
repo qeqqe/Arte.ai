@@ -1,4 +1,4 @@
-// Types for the dashboard data
+// dashboard data types
 
 export interface JobInfo {
   title: string;
@@ -32,7 +32,7 @@ export interface ProcessedSkills {
   architecture_design_patterns?: string[];
   frontend_frameworks_libraries?: string[];
   infrastructure_as_code_config?: string[];
-  [key: string]: string[] | undefined; // any additional categories
+  [key: string]: string[] | undefined;
 }
 
 export interface ProcessedSkill {
@@ -43,12 +43,10 @@ export interface ProcessedSkill {
 }
 
 export interface Comparison {
-  // Legacy fields for backward compatibility
   matchPercentage?: number;
   matchedSkills?: ProcessedSkill[];
   missingSkills?: ProcessedSkill[];
 
-  // New SkillGapAnalysis fields
   matchedSkillsDetailed?: Array<{
     skill: string;
     candidateLevel: number;
@@ -84,7 +82,7 @@ export interface Comparison {
     generatedAt: string;
   };
 
-  [key: string]: any; // Allow other fields for flexibility
+  [key: string]: any;
 }
 
 export interface Organization {
@@ -95,11 +93,13 @@ export interface Organization {
 
 export interface RecentJobComparison {
   comparison: Comparison;
-  jobInfo: string; // this is a string that needs to be parsed as JSON
+  jobInfo: string;
   processedSkills: ProcessedSkills;
-  parsedJobInfo?: JobInfo; // parse the jobInfo string into this object
+  parsedJobInfo?: JobInfo;
   organization?: Organization;
   postedTimeAgo?: string;
+  username?: string;
+  avatarUrl?: string;
 }
 
 export interface ConnectedDataSources {

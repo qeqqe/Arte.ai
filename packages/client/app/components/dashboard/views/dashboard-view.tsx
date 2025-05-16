@@ -89,7 +89,9 @@ export function DashboardView() {
           <Button
             className="mt-4"
             variant="outline"
-            onClick={() => window.location.reload()}
+            onClick={() =>
+              typeof window !== 'undefined' && window.location.reload()
+            }
           >
             Retry
           </Button>

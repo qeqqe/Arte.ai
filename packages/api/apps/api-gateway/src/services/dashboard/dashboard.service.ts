@@ -5,6 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Logger } from 'nestjs-pino';
+import { userGithubSchema } from '@app/common/github';
 
 @Injectable()
 export class DashboardService {
@@ -31,7 +32,15 @@ export class DashboardService {
         )
         .where(eq(userFetchedJobs.userId, userId))
         .limit(3);
-      return recentJobComparisons;
+
+      const userInfo = await this.getUserInfo(userId);
+
+      const returnObject = recentJobComparisons.map((job) => ({
+        ...job,
+        username: userInfo.username,
+        avatarUrl: userInfo.avatarUrl,
+      }));
+      return returnObject;
     } catch (error: any) {
       this.logger.error(
         'Failed to get recent job comparisons. Please try again',
@@ -65,6 +74,35 @@ export class DashboardService {
         },
       );
       return null;
+    }
+  }
+
+  async getUserInfo(userId: string): Promise<{
+    username: string;
+    avatarUrl: string;
+  }> {
+    try {
+      const userInfo = await this.drizzle
+        .select({
+          username: userGithubSchema.username,
+          avatarUrl: userGithubSchema.avatarUrl,
+        })
+        .from(userGithubSchema)
+        .where(eq(userGithubSchema.userId, userId));
+
+      if (userInfo.length === 0) {
+        throw new Error('User not found');
+      }
+      const user = userInfo[0];
+      return {
+        username: user.username,
+        avatarUrl: user.avatarUrl,
+      };
+    } catch (error: any) {
+      this.logger.error('Failed to get user info', {
+        error: error.message,
+      });
+      throw new Error('Failed to get user info');
     }
   }
 }

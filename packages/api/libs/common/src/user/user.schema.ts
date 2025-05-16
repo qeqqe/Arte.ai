@@ -6,7 +6,6 @@ import { userFetchedJobs } from '../jobpost';
 import { userPinnedRepo } from '../github';
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  avatarUrl: text('avatar_url'),
   resume: text('resume'),
   refreshToken: text('refresh_token').unique(),
   lastLogin: timestamp('last_login').defaultNow().notNull(),

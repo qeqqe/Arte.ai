@@ -57,9 +57,7 @@ export function useRecentJobComparisons() {
             try {
               if (!job) return null;
 
-              // Check for the comparison structure
               if (job.comparison) {
-                // Log structure type (new or legacy) for debugging
                 if (job.comparison.overallScore) {
                   console.log(
                     'Processing job with new SkillGapAnalysis format'
@@ -71,22 +69,28 @@ export function useRecentJobComparisons() {
                 }
               } else {
                 console.warn('Job missing comparison data:', job);
+                return null;
+              }
+
+              let parsedJobInfo = null;
+              if (job.jobInfo) {
+                try {
+                  parsedJobInfo =
+                    typeof job.jobInfo === 'string'
+                      ? JSON.parse(job.jobInfo)
+                      : job.jobInfo;
+                } catch (e) {
+                  console.warn('Failed to parse jobInfo:', e);
+                }
               }
 
               return {
                 ...job,
-                // Only try to parse if it's a string and not already an object
-                parsedJobInfo:
-                  typeof job.jobInfo === 'string'
-                    ? JSON.parse(job.jobInfo)
-                    : job.jobInfo,
+                parsedJobInfo,
               };
             } catch (parseError) {
               console.error('Error processing job data:', parseError, job);
-              return {
-                ...job,
-                parsedJobInfo: null,
-              };
+              return null; // Return null instead of partial object to ensure consistent data
             }
           })
           .filter(Boolean);

@@ -2,12 +2,8 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE_PROVIDER } from '@app/common/drizzle/drizzle.module';
-import { users, User, NewUser } from '@app/common/user/user.schema';
-import {
-  userGithubSchema,
-  UserGithub,
-  NewUserGithub,
-} from '@app/common/github/github.schema';
+import { users, User } from '@app/common/user/user.schema';
+import { userGithubSchema, UserGithub } from '@app/common/github/github.schema';
 import { GithubUserDto } from '@app/dtos/github';
 import { Logger } from 'nestjs-pino';
 
@@ -39,11 +35,12 @@ export class UserService {
 
   async createUser(githubUser: GithubUserDto): Promise<UserWithGithub> {
     const newUser = await this.db.transaction(async (tx) => {
+      // Create user with GitHub onboarding status set to true
       const [user] = await tx
         .insert(users)
         .values({
-          avatarUrl: githubUser.avatarUrl,
-        } satisfies Partial<NewUser>)
+          onboardingStatus: { github: true, leetcode: false, resume: false },
+        })
         .returning();
 
       const [githubData] = await tx
@@ -54,7 +51,8 @@ export class UserService {
           accessToken: githubUser.accessToken,
           username: githubUser.username,
           email: githubUser.email,
-        } satisfies Partial<NewUserGithub>)
+          avatarUrl: githubUser.avatarUrl,
+        } as any)
         .returning();
 
       return { user, github: githubData };
@@ -73,7 +71,7 @@ export class UserService {
         refreshToken,
         updatedAt: new Date(),
         lastLogin: new Date(),
-      } satisfies Partial<NewUser>)
+      } as any)
       .where(eq(users.id, userId))
       .returning();
 
