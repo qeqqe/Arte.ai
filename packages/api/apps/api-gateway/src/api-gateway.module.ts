@@ -5,6 +5,8 @@ import { AuthModule, DrizzleModule } from '@app/common';
 import { RmqModule } from '@app/common/rmq';
 import { DashboardController } from './controllers/dashboard/dashboard.controller';
 import { DashboardService } from './services/dashboard/dashboard.service';
+import { UserController } from './controllers/user/user.controller';
+import { UserService } from './services/user/user.service';
 import { HttpModule } from '@nestjs/axios';
 import { LoggerModule } from '@app/common';
 
@@ -32,7 +34,7 @@ const QUEUE_NAMES = {
     RmqModule.register({ name: QUEUE_NAMES.INGESTION }),
     RmqModule.register({ name: QUEUE_NAMES.AUTH }),
   ],
-  controllers: [DashboardController],
-  providers: [DashboardService],
+  controllers: [DashboardController, UserController],
+  providers: [DashboardService, UserService],
 })
 export class ApiGatewayModule {}

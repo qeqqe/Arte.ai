@@ -7,6 +7,7 @@ export const userGithubSchema = pgTable('user_github_schema', {
   userId: uuid('user_id')
     .references(() => users.id)
     .notNull(),
+  avatarUrl: text('avatar_url'),
   githubId: text('github_id').notNull(),
   accessToken: text('access_token').notNull(),
   username: text('username').notNull(),
