@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useState } from 'react';
 
-type ViewType = 'dashboard' | 'job-analysis' | 'my-data' | 'profile';
+export type ViewType = 'dashboard' | 'job-analysis' | 'my-data' | 'profile';
 
-interface DashboardContextType {
+export interface DashboardContextType {
   activeView: ViewType;
   setActiveView: (view: ViewType) => void;
 }
@@ -46,16 +46,16 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   // When activeView changes, update the data attribute and dispatch an event for listeners
   React.useEffect(() => {
-    if (contextRef.current) {
-      contextRef.current.setAttribute('data-active-view', activeView);
+    if (typeof window === 'undefined' || !contextRef.current) return;
 
-      // Dispatch an event to notify any listeners about the view change
-      const viewChangeEvent = new CustomEvent('viewChange', {
-        detail: { view: activeView },
-        bubbles: true,
-      });
-      contextRef.current.dispatchEvent(viewChangeEvent);
-    }
+    contextRef.current.setAttribute('data-active-view', activeView);
+
+    // Dispatch an event to notify any listeners about the view change
+    const viewChangeEvent = new CustomEvent('viewChange', {
+      detail: { view: activeView },
+      bubbles: true,
+    });
+    contextRef.current.dispatchEvent(viewChangeEvent);
   }, [activeView]);
 
   return (
@@ -87,53 +87,38 @@ export function useViewNavigation() {
   const [ready, setReady] = useState(false);
 
   React.useEffect(() => {
-    // Find the dashboard context element
-    contextRef.current = document.querySelector(
-      '[data-dashboard-context="true"]'
-    );
-    setReady(!!contextRef.current);
+    // only execute in browser environment
+    if (typeof document !== 'undefined') {
+      // find the dashboard context element
+      contextRef.current = document.querySelector(
+        '[data-dashboard-context="true"]'
+      );
+      setReady(!!contextRef.current);
+    }
   }, []);
 
   const navigateTo = React.useCallback((view: ViewType) => {
-    if (contextRef.current) {
-      // Update the attribute immediately for faster UI feedback
-      contextRef.current.setAttribute('data-active-view', view);
-
-      // Dispatch both events for listeners
-      const setViewEvent = new CustomEvent('setActiveView', {
-        detail: { view },
-      });
-      contextRef.current.dispatchEvent(setViewEvent);
-
-      const viewChangeEvent = new CustomEvent('viewChange', {
-        detail: { view },
-        bubbles: true,
-      });
-      contextRef.current.dispatchEvent(viewChangeEvent);
-
-      return true;
+    // Client-side only operations
+    if (typeof window === 'undefined' || !contextRef.current) {
+      return false;
     }
 
-    // Fallback to URL navigation if context is not found
-    let path = '/';
-    switch (view) {
-      case 'dashboard':
-        path = '/';
-        break;
-      case 'job-analysis':
-        path = '/job-analysis';
-        break;
-      case 'my-data':
-        path = '/my-data';
-        break;
-      case 'profile':
-        path = '/settings';
-        break;
-    }
-    if (typeof window !== 'undefined') {
-      window.location.pathname = path;
-    }
-    return false;
+    // Update the attribute immediately for faster UI feedback
+    contextRef.current.setAttribute('data-active-view', view);
+
+    // Dispatch both events for listeners
+    const setViewEvent = new CustomEvent('setActiveView', {
+      detail: { view },
+    });
+    contextRef.current.dispatchEvent(setViewEvent);
+
+    const viewChangeEvent = new CustomEvent('viewChange', {
+      detail: { view },
+      bubbles: true,
+    });
+    contextRef.current.dispatchEvent(viewChangeEvent);
+
+    return true;
   }, []);
 
   return {
