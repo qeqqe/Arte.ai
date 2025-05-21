@@ -12,11 +12,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { join } from 'path';
 import * as Joi from 'joi';
 import { GithubController } from './controllers/github/github.controller';
-import { LinkedinController } from './controllers/linkedin/linkedin.controller';
 import { ResumeController } from './controllers/resume/resume.controller';
 import { LeetcodeController } from './controllers/leetcode/leetcode.controller';
 import { GithubService } from './services/github/github.service';
-import { LinkedinService } from './services/linkedin/linkedin.service';
 import { ResumeService } from './services/resume/resume.service';
 import { LeetcodeService } from './services/leetcode/leetcode.service';
 import { RmqModule } from '@app/common/rmq/rmq.module';
@@ -77,7 +75,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   controllers: [
     IngestionController,
     GithubController,
-    LinkedinController,
     ResumeController,
     LeetcodeController,
     HealthController,
@@ -86,7 +83,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
   providers: [
     IngestionService,
     GithubService,
-    LinkedinService,
     ResumeService,
     LeetcodeService,
     DrizzleProvider,

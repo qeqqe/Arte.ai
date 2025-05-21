@@ -9,6 +9,7 @@ import { HttpService } from '@nestjs/axios';
 import { OpenAi } from '../open-ai-service/open-ai.service';
 import { StatsService } from '../stats/stats.service';
 import { ClientProxy } from '@nestjs/microservices';
+import { LinkedinService } from '../linkedin/linkedin.service';
 @Injectable()
 export class CompareService {
   private readonly logger = new Logger(CompareService.name);
@@ -27,6 +28,7 @@ export class CompareService {
     private readonly drizzle: NodePgDatabase<typeof schema>,
     @Inject('INGESTION_SERVICE')
     private readonly ingestionService: ClientProxy,
+    private readonly linkedinService: LinkedinService,
   ) {}
 
   async compareUserToJob(jobId: string, userId: string): Promise<string> {
@@ -111,12 +113,11 @@ export class CompareService {
       .limit(1)
       .then((rows) => rows[0]);
 
-    // if not found, fetch it and create it
     if (!jobInfo?.jobInfo) {
       this.logger.log(
         `Job info not found, scraping job details for jobId ${jobId}`,
       );
-      await this.ingestionService.send('scrape_job', { jobId, userId });
+      await this.linkedinService.scrapeJob(jobId, userId);
 
       jobInfo = await this.drizzle
         .select({

@@ -11,6 +11,8 @@ import { CompareController } from './controller/compare/compare.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { OpenAi } from './services/open-ai-service/open-ai.service';
 import { OpenAiController } from './controller/open-ai/open-ai.controller';
+import { LinkedinController } from './controller/linkedin/linkedin.controller';
+import { LinkedinService } from './services/linkedin/linkedin.service';
 
 @Module({
   imports: [
@@ -54,7 +56,18 @@ import { OpenAiController } from './controller/open-ai/open-ai.controller';
       },
     ]),
   ],
-  controllers: [StatsController, CompareController, OpenAiController],
-  providers: [StatsService, CompareService, OpenAi, RmqService],
+  controllers: [
+    StatsController,
+    CompareController,
+    OpenAiController,
+    LinkedinController,
+  ],
+  providers: [
+    StatsService,
+    CompareService,
+    OpenAi,
+    RmqService,
+    LinkedinService,
+  ],
 })
 export class AnalysisModule {}

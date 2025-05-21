@@ -13,7 +13,7 @@ import { DRIZZLE_PROVIDER } from '@app/common';
 import { ScrapedJob, userFetchedJobs } from '@app/common/jobpost';
 import { linkedinJobs, NewLinkedinJob } from '@app/common/jobpost';
 import { SkillsData } from '@app/common/jobpost/skills.types';
-import { ClientProxy } from '@nestjs/microservices';
+import { OpenAi } from '../open-ai-service/open-ai.service';
 
 @Injectable()
 export class LinkedinService {
@@ -24,8 +24,7 @@ export class LinkedinService {
     private readonly configService: ConfigService,
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase,
-    @Inject('ANALYSIS_SERVICE')
-    private readonly analysisService: ClientProxy,
+    private readonly openAiService: OpenAi,
   ) {}
 
   async scrapeJob(jobId: string, userId: string): Promise<SkillsData> {
@@ -54,8 +53,8 @@ export class LinkedinService {
           })}`,
         );
 
-        const processedJobData = await firstValueFrom(
-          this.analysisService.send('extract_skills', jobContent),
+        const processedJobData = await this.openAiService.extractSkills(
+          jobContent,
         );
 
         this.logger.log(
