@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_API_GATEWAY_URL}/dashboard/recent-job-comparisons`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_BACKEND_API_GATEWAY_URL}/dashboard/get-all-job-comparisons`;
     console.log(`Making request to: ${apiUrl}`);
 
     const response = await fetch(apiUrl, {

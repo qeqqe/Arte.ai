@@ -25,7 +25,7 @@ export const linkedinJobs = pgTable('linkedin_jobs', {
     .notNull(),
   postedTimeAgo: text('posted_time_ago').default('N/A').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  processedSkills: jsonb('processed_skills').notNull(),
+  processedSkills: jsonb('processed_skills').$type<JSON>().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 export const userJobPostRelation = relations(linkedinJobs, ({ many }) => ({

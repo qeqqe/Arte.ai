@@ -52,3 +52,37 @@ export async function fetchUserProfile() {
 
   return await response.json();
 }
+
+export async function compareToJob(jobId: string) {
+  try {
+    console.log(`Making API request to /api/jobs/compare with jobId: ${jobId}`);
+
+    const response = await fetch(`/api/jobs/compare?jobId=${jobId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies for auth
+    });
+
+    if (!response.ok) {
+      let errorMessage = `Failed to compare job (${response.status})`;
+
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData?.error || errorData?.details || errorMessage;
+      } catch (parseError) {
+        // If JSON parsing fails, try to get text
+        const errorText = await response.text().catch(() => '');
+        if (errorText) errorMessage += `: ${errorText}`;
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error comparing to job:', error);
+    throw error;
+  }
+}

@@ -12,10 +12,185 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
-import { useRecentJobComparisons } from '@/hooks/use-dashboard-data';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Loader2, Plus } from 'lucide-react';
+import {
+  useRecentJobComparisons,
+  useAllJobComparisons,
+} from '@/hooks/use-dashboard-data';
 import { Comparison } from '@/types/dashboard';
 import { JobDetailView } from './job-detail-view';
+import { compareToJob } from '@/libs/api';
+import { toast } from 'sonner';
+
+// Compare Job Dialog Component
+function CompareJobDialog({
+  children,
+  onSuccess,
+}: {
+  children: React.ReactNode;
+  onSuccess?: (jobId: string) => void;
+}) {
+  const [jobUrl, setJobUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!jobUrl.trim()) {
+      setError('Please enter a LinkedIn job URL or ID.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const jobId = extractJobId(jobUrl);
+
+      if (!jobId) {
+        throw new Error(
+          'Invalid LinkedIn job URL. Please check and try again.'
+        );
+      }
+
+      console.log(`Sending job comparison request for ID: ${jobId}`);
+      const result = await compareToJob(jobId);
+      console.log('Job comparison result:', result);
+
+      toast.success('Job analysis complete!');
+
+      if (onSuccess) {
+        onSuccess(jobId);
+      }
+
+      // Close dialog on success
+      setIsOpen(false);
+      setJobUrl('');
+    } catch (err) {
+      console.error('Error in job comparison:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong. Please try again.'
+      );
+      toast.error('Failed to analyze job');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const extractJobId = (input: string): string | null => {
+    // Check if input is just an ID
+    if (/^\d+$/.test(input.trim())) {
+      return input.trim();
+    }
+
+    try {
+      // Handle various LinkedIn URL formats:
+      // 1. https://www.linkedin.com/jobs/view/4136871040
+      // 2. https://www.linkedin.com/jobs/view/job-title-at-company-4136871040
+      // 3. https://www.linkedin.com/jobs/view/4136871040/
+      // 4. https://linkedin.com/jobs/view/4136871040
+
+      let match = input.match(/linkedin\.com\/jobs\/view\/(\d+)/i);
+
+      // If that doesn't work, try a more permissive pattern
+      if (!match) {
+        match = input.match(/linkedin\.com\/jobs\/view\/[^\/]*?(\d{8,})/i);
+      }
+
+      console.log('Extracted job ID:', match ? match[1] : 'none');
+      return match ? match[1] : null;
+    } catch (e) {
+      console.error('Error extracting job ID:', e);
+      return null;
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md bg-white">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader className="space-y-3 mb-4">
+            <DialogTitle className="text-xl font-semibold text-slate-800">
+              Compare to New Job
+            </DialogTitle>
+            <p className="text-slate-600 text-sm">
+              Enter a LinkedIn job URL or ID to analyze how well your profile
+              matches with this job opportunity.
+            </p>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="job-url"
+                className="text-sm font-medium text-slate-700 mb-1 block"
+              >
+                LinkedIn Job URL or ID
+              </label>
+              <Input
+                id="job-url"
+                value={jobUrl}
+                onChange={(e) => setJobUrl(e.target.value)}
+                placeholder="https://www.linkedin.com/jobs/view/0123456789"
+                className="w-full placeholder:text-slate-400/80"
+                disabled={isLoading}
+              />
+              {error && <p className="text-rose-600 text-xs mt-1">{error}</p>}
+            </div>
+
+            <div className="text-xs text-slate-500">
+              <p>
+                Tip: Just paste the complete LinkedIn job URL directly from your
+                browser.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6">
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="text-slate-600 border-slate-200 hover:bg-white hover:border-slate-300 hover:text-slate-800"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="submit"
+              className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                'Analyze Job'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface Job {
   id: number;
@@ -30,7 +205,13 @@ interface Job {
 
 export function JobAnalysisView() {
   const { data: recentJobs, isLoading } = useRecentJobComparisons();
+  const {
+    data: allJobs,
+    refetch: fetchAllJobs,
+    isFetching: isLoadingAll,
+  } = useAllJobComparisons();
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [showingAll, setShowingAll] = useState(false);
 
   // Show job details view if a job is selected
   if (selectedJobId) {
@@ -110,8 +291,9 @@ export function JobAnalysisView() {
   ];
 
   // Transform API data to our Job format if available
+  const currentJobs = showingAll ? allJobs : recentJobs;
   const transformedJobs =
-    recentJobs?.map((apiJob, index) => {
+    currentJobs?.map((apiJob, index) => {
       // Parse job info if it's a string
       let jobInfo;
       try {
@@ -200,10 +382,12 @@ export function JobAnalysisView() {
               </CardDescription>
             </div>
             <div className="flex items-center">
-              <Button className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm text-xs sm:text-sm transition-colors">
-                <Plus className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span>Compare to New Job</span>
-              </Button>
+              <CompareJobDialog onSuccess={() => window.location.reload()}>
+                <Button className="bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm text-xs sm:text-sm transition-colors">
+                  <Plus className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                  <span>Compare to New Job</span>
+                </Button>
+              </CompareJobDialog>
             </div>
           </div>
         </CardHeader>
@@ -223,25 +407,35 @@ export function JobAnalysisView() {
                 No job analyses found. Start by comparing your profile to a job
                 posting.
               </p>
-              <Button className="mt-2 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm">
-                Compare to New Job
-              </Button>
+              <CompareJobDialog onSuccess={() => window.location.reload()}>
+                <Button className="mt-2 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white shadow-sm">
+                  Compare to New Job
+                </Button>
+              </CompareJobDialog>
             </div>
           )}
         </CardContent>
         <CardFooter className="border-t border-slate-100 pt-3 sm:pt-4 px-5 sm:px-7 flex flex-col sm:flex-row justify-between gap-3 bg-gradient-to-r from-slate-50 to-rose-50/30">
-          <Button
-            variant="outline"
-            className="text-slate-600 border-slate-200 hover:bg-white hover:border-slate-300 hover:text-slate-800 text-xs sm:text-sm w-full sm:w-auto font-medium shadow-sm transition-colors"
-          >
-            Load More Jobs
-          </Button>
-          <Button
-            variant="outline"
-            className="text-rose-600 border-rose-200 hover:bg-white hover:border-rose-300 hover:text-rose-700 text-xs sm:text-sm w-full sm:w-auto font-medium shadow-sm transition-colors"
-          >
-            Compare Selected Jobs
-          </Button>
+          {!showingAll && (
+            <Button
+              variant="outline"
+              className="text-slate-600 border-slate-200 hover:bg-white hover:border-slate-300 hover:text-slate-800 text-xs sm:text-sm w-full sm:w-auto font-medium shadow-sm transition-colors"
+              onClick={async () => {
+                await fetchAllJobs();
+                setShowingAll(true);
+              }}
+              disabled={isLoadingAll}
+            >
+              {isLoadingAll ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                'Load More'
+              )}
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </div>
@@ -418,14 +612,6 @@ function JobCard({ job, isLast = false }: { job: Job; isLast?: boolean }) {
                   className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium px-3 shadow-sm w-full"
                 >
                   View Details
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 h-8 text-xs font-medium px-3 w-full"
-                >
-                  Compare
                 </Button>
               </div>
             </div>
