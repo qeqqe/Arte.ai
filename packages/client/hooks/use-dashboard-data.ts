@@ -158,3 +158,87 @@ export function useConnectedDataSources() {
     retry: 1,
   });
 }
+
+/**
+ * fetches all job comparisons for the user
+ */
+export function useAllJobComparisons() {
+  const router = useRouter();
+
+  return useQuery<RecentJobComparison[]>({
+    queryKey: ['allJobComparisons'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching all job comparisons...');
+        const response = await fetch('/api/dashboard/all-comparison', {
+          credentials: 'include',
+        });
+
+        if (response.status === 401) {
+          console.error('Unauthorized access to all job comparisons');
+          router.push('/');
+          throw new Error('Unauthorized');
+        }
+
+        if (!response.ok) {
+          console.error(
+            'API response not OK:',
+            response.status,
+            response.statusText
+          );
+          throw new Error(
+            `Failed to fetch all job comparisons: ${response.statusText}`
+          );
+        }
+
+        const responseData = await response.json();
+        console.log('All jobs API response received, processing...');
+
+        const jobsArray = Array.isArray(responseData)
+          ? responseData
+          : responseData
+            ? [responseData]
+            : [];
+
+        if (jobsArray.length === 0) {
+          console.log('No job comparisons found');
+          return [];
+        }
+
+        console.log(`Processing ${jobsArray.length} job comparisons`);
+
+        return jobsArray
+          .map((job) => {
+            try {
+              let parsedJobInfo = job.parsedJobInfo;
+              if (!parsedJobInfo && job.jobInfo) {
+                try {
+                  parsedJobInfo =
+                    typeof job.jobInfo === 'string' &&
+                    job.jobInfo.trim().startsWith('{')
+                      ? JSON.parse(job.jobInfo)
+                      : job.jobInfo;
+                } catch (e) {
+                  console.warn('Failed to parse jobInfo:', e);
+                }
+              }
+
+              return {
+                ...job,
+                parsedJobInfo,
+              };
+            } catch (parseError) {
+              console.error('Error processing job data:', parseError, job);
+              return null;
+            }
+          })
+          .filter(Boolean);
+      } catch (error) {
+        console.error('Error in useAllJobComparisons hook:', error);
+        throw error;
+      }
+    },
+    enabled: false, // dont auto-fetch
+    retry: 1,
+  });
+}

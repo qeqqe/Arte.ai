@@ -15,7 +15,7 @@ export class CompareService {
   private readonly logger = new Logger(CompareService.name);
   private responseCache = new Map<
     string,
-    { response: string; timestamp: number }
+    { response: any; timestamp: number }
   >();
   private readonly CACHE_TTL = 3600000;
 
@@ -31,7 +31,7 @@ export class CompareService {
     private readonly linkedinService: LinkedinService,
   ) {}
 
-  async compareUserToJob(jobId: string, userId: string): Promise<string> {
+  async compareUserToJob(jobId: string, userId: string): Promise<any> {
     this.logger.log(`Comparing user ${userId} with job ${jobId}`);
 
     const cacheKey = `${userId}:${jobId}`;
@@ -75,11 +75,23 @@ export class CompareService {
           jobInfo.processedSkills,
         );
 
+      // Parse the JSON response to get the actual object
+      let parsedAnalysis;
+      try {
+        parsedAnalysis =
+          typeof analysisResponse === 'string'
+            ? JSON.parse(analysisResponse)
+            : analysisResponse;
+      } catch (parseError) {
+        this.logger.error('Failed to parse analysis response:', parseError);
+        throw new Error('Invalid analysis response format');
+      }
+
       // Now update with the internal UUID, not the LinkedIn job ID
       await this.drizzle
         .update(userFetchedJobs)
         .set({
-          comparison: analysisResponse as unknown as JSON,
+          comparison: parsedAnalysis as unknown as JSON,
         } as any)
         .where(
           and(
@@ -88,9 +100,9 @@ export class CompareService {
           ),
         );
 
-      this.storeInCache(cacheKey, analysisResponse);
+      this.storeInCache(cacheKey, parsedAnalysis);
 
-      return analysisResponse;
+      return parsedAnalysis;
     } catch (error) {
       this.logger.error(
         `Error in compareUserToJob: ${error.message}`,

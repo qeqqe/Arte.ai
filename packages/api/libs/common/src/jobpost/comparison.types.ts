@@ -1,5 +1,7 @@
 // Comparison object for job post
 
+import { Organization } from './scraped_job.types';
+
 export type SkillGapAnalysis = {
   matchedSkills: Array<{
     skill: string;
@@ -35,4 +37,18 @@ export type SkillGapAnalysis = {
   metadata: {
     generatedAt: string;
   };
+};
+
+type recentJobType = {
+  comparison: SkillGapAnalysis;
+  jobInfo: string;
+  processedSkills: JSON;
+  organization: Organization;
+  postedTimeAgo: string;
+};
+
+export type JobComparisonsResponse = {
+  recentJobComparisons: recentJobType[];
+  username: string;
+  avatarUrl: string;
 };

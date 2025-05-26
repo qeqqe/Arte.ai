@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Logger } from 'nestjs-pino';
 import { userGithubSchema } from '@app/common/github';
+import { JobComparisonsResponse } from '@app/common/jobpost/comparison.types';
 
 @Injectable()
 export class DashboardService {
@@ -15,7 +16,10 @@ export class DashboardService {
     @Inject(DRIZZLE_PROVIDER)
     private readonly drizzle: NodePgDatabase,
   ) {}
-  async getRecentJobComparisons(userId: string): Promise<any> {
+  async getJobComparisons(
+    userId: string,
+    fetchAll: boolean,
+  ): Promise<JobComparisonsResponse> {
     try {
       const recentJobComparisons = await this.drizzle
         .select({
@@ -31,15 +35,20 @@ export class DashboardService {
           eq(userFetchedJobs.linkedinJobSchemaId, linkedinJobs.id),
         )
         .where(eq(userFetchedJobs.userId, userId))
-        .limit(3);
+        .limit(fetchAll ? 100 : 4);
 
       const userInfo = await this.getUserInfo(userId);
-
-      const returnObject = recentJobComparisons.map((job) => ({
-        ...job,
+      const returnObject: JobComparisonsResponse = {
+        recentJobComparisons: recentJobComparisons.map((job) => ({
+          comparison: job.comparison,
+          jobInfo: job.jobInfo,
+          processedSkills: job.processedSkills,
+          organization: job.organization,
+          postedTimeAgo: job.postedTimeAgo,
+        })),
         username: userInfo.username,
         avatarUrl: userInfo.avatarUrl,
-      }));
+      };
       return returnObject;
     } catch (error: any) {
       this.logger.error(

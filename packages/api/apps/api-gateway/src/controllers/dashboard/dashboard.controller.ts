@@ -9,7 +9,14 @@ export class DashboardController {
   @UseGuards(JwtAuthGuard)
   async getRecentJobComparisons(@Req() request: Request): Promise<any> {
     const user = request['user'] as UserPayload;
-    return await this.dashboardService.getRecentJobComparisons(user.id);
+    return await this.dashboardService.getJobComparisons(user.id, false);
+  }
+
+  @Get('get-all-job-comparisons')
+  @UseGuards(JwtAuthGuard)
+  async getAllJobComparison(@Req() request: Request): Promise<any> {
+    const user = request['user'] as UserPayload;
+    return await this.dashboardService.getJobComparisons(user.id, true);
   }
 
   @Get('connected-data-sources')

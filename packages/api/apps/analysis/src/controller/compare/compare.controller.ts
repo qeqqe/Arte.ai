@@ -12,7 +12,7 @@ export class CompareController {
   compareUserToJob(
     @Query('jobId') jobId: string,
     @Req() request: Request & { user: UserPayload },
-  ): Promise<string> {
+  ): Promise<any> {
     const userId = request.user.id;
     return this.compareService.compareUserToJob(jobId, userId);
   }
