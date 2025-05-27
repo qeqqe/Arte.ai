@@ -158,3 +158,31 @@ export type JobComparisonsResponse = {
   username: string;
   avatarUrl: string;
 };
+
+export interface Skill {
+  skill_name: string;
+  evidence_source: string;
+  proficiency_score: number;
+  // Support alternative field names that might come from different API responses
+  skill?: string;
+  proficiency?: number;
+}
+
+export interface UserSkillsData {
+  languages: Skill[];
+  devops_cicd: Skill[];
+  cloud_platforms: Skill[];
+  testing_quality: Skill[];
+  ai_ml_datascience: Skill[];
+  apis_communication: Skill[];
+  database_tools_orms: Skill[];
+  frontend_styling_ui: Skill[];
+  databases_datastores: Skill[];
+  backend_frameworks_runtime: Skill[];
+  methodologies_collaboration: Skill[];
+  architecture_design_patterns: Skill[];
+  frontend_frameworks_libraries: Skill[];
+  skill_gaps: string[];
+  key_strengths: string[];
+  brief_description: string;
+}

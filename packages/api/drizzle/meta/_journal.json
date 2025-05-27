@@ -50,6 +50,13 @@
       "when": 1747325989301,
       "tag": "0007_volatile_sunspot",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1748331120656,
+      "tag": "0008_woozy_spectrum",
+      "breakpoints": true
     }
   ]
 }

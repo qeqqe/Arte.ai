@@ -7,6 +7,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Logger } from 'nestjs-pino';
 import { userGithubSchema } from '@app/common/github';
 import { JobComparisonsResponse } from '@app/common/jobpost/comparison.types';
+import { SkillsData } from '@app/common/jobpost/skills.types';
 
 @Injectable()
 export class DashboardService {
@@ -36,7 +37,6 @@ export class DashboardService {
         )
         .where(eq(userFetchedJobs.userId, userId))
         .limit(fetchAll ? 100 : 4);
-
       const userInfo = await this.getUserInfo(userId);
       const returnObject: JobComparisonsResponse = {
         recentJobComparisons: recentJobComparisons.map((job) => ({
@@ -112,6 +112,28 @@ export class DashboardService {
         error: error.message,
       });
       throw new Error('Failed to get user info');
+    }
+  }
+
+  async getUserProcessedSkills(userId: string): Promise<SkillsData | null> {
+    try {
+      return await this.drizzle
+        .select({
+          processedSkills: users.userProcessedSkills,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .then((result) => {
+          if (result.length === 0) {
+            return null;
+          }
+          return result[0].processedSkills || null;
+        });
+    } catch (error: any) {
+      this.logger.error('Failed to get user processed skills', {
+        error: error.message,
+      });
+      return null;
     }
   }
 }
