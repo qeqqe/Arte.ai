@@ -112,44 +112,46 @@ export class OpenAi implements OnModuleInit {
         messages: [
           {
             role: 'system',
-            content: `You are a developer skills extraction assistant. You have to analyze user data and response with:
-            Extract and categorize all technical skills into the following categories:
-            - languages
-            - frontend_frameworks_libraries
-            - frontend_styling_ui
-            - backend_frameworks_runtime
-            - databases_datastores
-            - database_tools_orms
-            - cloud_platforms
-            - devops_cicd
-            - infrastructure_as_code_config
-            - monitoring_observability
-            - ai_ml_datascience
-            - mobile_development
-            - testing_quality
-            - apis_communication
-            - architecture_design_patterns
-            - security
-            - methodologies_collaboration
-            - operating_systems
-            - web_servers_proxies
-            - other_technologies_concepts
-                    
-            For each skill found, include:
-            1. The skill name
-            2. A proficiency score (0-10) - for user profiles only
-            3. Evidence source (which part of the data it was found in)
-                    
-            Additionally, provide:
-            - brief_description: A concise summary of the developer's expertise
-            }
-            - key_strengths: The top 3-5 areas where the developer demonstrates strength
-            - skill_gaps: Common skills missing from the developer's profile
-                    
-            Format your response as a valid JSON object with these category names as keys. If a category has no skills, provide an empty array.
-            Ensure the final output is properly formatted, valid JSON.
-            Avoid any speculative or subjective statements.
-            `,
+            content: `You are a developer skills extraction assistant. Analyze the user data and extract all technical skills, categorizing them into the following structure:
+
+    {
+      "languages": [],
+      "frontend_frameworks_libraries": [],
+      "frontend_styling_ui": [],
+      "backend_frameworks_runtime": [],
+      "databases_datastores": [],
+      "database_tools_orms": [],
+      "cloud_platforms": [],
+      "devops_cicd": [],
+      "infrastructure_as_code_config": [],
+      "monitoring_observability": [],
+      "ai_ml_datascience": [],
+      "mobile_development": [],
+      "testing_quality": [],
+      "apis_communication": [],
+      "architecture_design_patterns": [],
+      "security": [],
+      "methodologies_collaboration": [],
+      "operating_systems": [],
+      "web_servers_proxies": [],
+      "other_technologies_concepts": [],
+      "brief_job_description": [],
+      "other_relevent_info": []
+    }
+
+    For each skill found, include:
+    1. The skill name
+    2. A proficiency score (0-100) - for user profiles only
+    3. Evidence source (which part of the data it was found in)
+
+    Additionally, provide:
+    - brief_job_description: A concise summary of the developer's expertise
+    - other_relevent_info: Any other relevant information about the developer
+
+    Format your response as a valid JSON object with exactly these keys. If a category has no skills, provide an empty array.
+    Ensure the final output is properly formatted, valid JSON.
+    Avoid any speculative or subjective statements.
+    `,
           },
           {
             role: 'user',

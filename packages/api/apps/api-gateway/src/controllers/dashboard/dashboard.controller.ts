@@ -25,4 +25,11 @@ export class DashboardController {
     const user = request['user'] as UserPayload;
     return await this.dashboardService.getConnectedDataSources(user.id);
   }
+
+  @Get('user-proccesed-skills')
+  @UseGuards(JwtAuthGuard)
+  async getUserProcessedSkills(@Req() request: Request): Promise<any> {
+    const user = request['user'] as UserPayload;
+    return await this.dashboardService.getUserProcessedSkills(user.id);
+  }
 }

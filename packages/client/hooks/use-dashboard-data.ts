@@ -2,7 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { ConnectedDataSources, RecentJobComparison } from '../types/dashboard';
+import {
+  ConnectedDataSources,
+  RecentJobComparison,
+  UserSkillsData,
+} from '../types/dashboard';
 
 /**
  * fetches the recent job comparisons for the user
@@ -239,6 +243,50 @@ export function useAllJobComparisons() {
       }
     },
     enabled: false, // dont auto-fetch
+    retry: 1,
+  });
+}
+
+/**
+ * Fetches the user's processed skills data
+ */
+export function useUserSkills() {
+  const router = useRouter();
+
+  return useQuery<UserSkillsData>({
+    queryKey: ['userProcessedSkills'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching user skills...');
+        const response = await fetch('/api/dashboard/user-skills', {
+          credentials: 'include',
+        });
+
+        if (response.status === 401) {
+          console.error('Unauthorized access to user skills');
+          router.push('/');
+          throw new Error('Unauthorized');
+        }
+
+        if (!response.ok) {
+          console.error(
+            'API response not OK:',
+            response.status,
+            response.statusText
+          );
+          throw new Error(
+            `Failed to fetch user skills: ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        console.log('User skills API response:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in useUserSkills hook:', error);
+        throw error;
+      }
+    },
     retry: 1,
   });
 }
