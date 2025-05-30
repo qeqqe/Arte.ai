@@ -145,7 +145,7 @@ export type SkillGapAnalysis = {
   };
 };
 
-type recentJobType = {
+export type recentJobType = {
   comparison: SkillGapAnalysis;
   jobInfo: string;
   processedSkills: JSON;
@@ -169,20 +169,29 @@ export interface Skill {
 }
 
 export interface UserSkillsData {
-  languages: Skill[];
-  devops_cicd: Skill[];
-  cloud_platforms: Skill[];
-  testing_quality: Skill[];
-  ai_ml_datascience: Skill[];
-  apis_communication: Skill[];
-  database_tools_orms: Skill[];
-  frontend_styling_ui: Skill[];
-  databases_datastores: Skill[];
-  backend_frameworks_runtime: Skill[];
-  methodologies_collaboration: Skill[];
-  architecture_design_patterns: Skill[];
-  frontend_frameworks_libraries: Skill[];
-  skill_gaps: string[];
-  key_strengths: string[];
-  brief_description: string;
+  security?: Skill[];
+  languages?: Skill[];
+  devops_cicd?: Skill[];
+  cloud_platforms?: Skill[];
+  testing_quality?: Skill[];
+  ai_ml_datascience?: Skill[];
+  operating_systems?: Skill[];
+  apis_communication?: Skill[];
+  mobile_development?: Skill[];
+  database_tools_orms?: Skill[];
+  frontend_styling_ui?: Skill[];
+  other_relevent_info?: string[];
+  web_servers_proxies?: Skill[];
+  databases_datastores?: Skill[];
+  brief_job_description?: string[];
+  monitoring_observability?: Skill[];
+  backend_frameworks_runtime?: Skill[];
+  methodologies_collaboration?: Skill[];
+  other_technologies_concepts?: Skill[];
+  architecture_design_patterns?: Skill[];
+  frontend_frameworks_libraries?: Skill[];
+  infrastructure_as_code_config?: Skill[];
+  skill_gaps?: string[];
+  key_strengths?: string[];
+  brief_description?: string;
 }
