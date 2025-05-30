@@ -18,7 +18,7 @@ export function DashboardContent() {
       case 'my-data':
         return <MyDataView />;
       case 'profile':
-        return <div className="p-6">Profile content will go here</div>;
+        return <div className="p-6">Profile Setting will go here</div>;
       default:
         return <DashboardView />;
     }

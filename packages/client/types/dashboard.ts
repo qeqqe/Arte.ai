@@ -145,7 +145,7 @@ export type SkillGapAnalysis = {
   };
 };
 
-type recentJobType = {
+export type recentJobType = {
   comparison: SkillGapAnalysis;
   jobInfo: string;
   processedSkills: JSON;
