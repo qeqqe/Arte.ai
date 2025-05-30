@@ -31,7 +31,7 @@ import { Comparison } from '@/types/dashboard';
 import { JobDetailView } from './job-detail-view';
 import { compareToJob } from '@/libs/api';
 import { toast } from 'sonner';
-
+import JobComparisonDialog from './job-comparison-dialog';
 // Compare Job Dialog Component
 function CompareJobDialog({
   children,
@@ -201,6 +201,15 @@ interface Job {
   comparison?: Comparison;
   // Fields to support new format
   skillTags?: string[];
+  // Additional fields from API
+  postedTimeAgo?: string;
+  jobInfo?: string;
+  processedSkills?: any;
+  organization?: {
+    name: string;
+    location: string;
+    logo_url: string;
+  };
 }
 
 export function JobAnalysisView() {
@@ -362,12 +371,14 @@ export function JobAnalysisView() {
         comparison: apiJob.comparison,
         skillTags,
         postedTimeAgo: apiJob.postedTimeAgo || '',
+        jobInfo: apiJob.jobInfo,
+        processedSkills: apiJob.processedSkills,
+        organization: apiJob.organization,
       };
     }) || analyzedJobs;
 
-  const displayJobs =
-    transformedJobs.length > 0 ? transformedJobs : analyzedJobs;
-
+  let displayJobs = transformedJobs.length > 0 ? transformedJobs : analyzedJobs;
+  displayJobs.reverse();
   return (
     <div className="grid w-full gap-5 sm:gap-7 max-w-none">
       <Card className="w-full overflow-hidden shadow-md border-slate-200 bg-white hover:shadow-lg transition-shadow duration-300">
@@ -606,13 +617,15 @@ function JobCard({ job, isLast = false }: { job: Job; isLast?: boolean }) {
 
               {/* Action Buttons */}
               <div className="flex sm:flex-col gap-2 w-full">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium px-3 shadow-sm w-full"
-                >
-                  View Details
-                </Button>
+                <JobComparisonDialog jobData={job}>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-8 text-xs font-medium px-3 shadow-sm w-full"
+                  >
+                    View Details
+                  </Button>
+                </JobComparisonDialog>
               </div>
             </div>
           </div>
