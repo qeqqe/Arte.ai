@@ -140,6 +140,12 @@ export function DashboardSidebar() {
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+            onClick={async () => {
+              await fetch('api/dashboard/log-out', {
+                credentials: 'include',
+              });
+              window.location.href = '/';
+            }}
           >
             <LogOut className="h-4 w-4" />
           </Button>

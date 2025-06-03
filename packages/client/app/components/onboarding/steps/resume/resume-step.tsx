@@ -91,6 +91,7 @@ export default function ResumeStep({ data, updateData }: ResumeStepProps) {
         const response = await fetch('/api/onboarding/resume', {
           method: 'POST',
           body: formData,
+          credentials: 'include',
         });
 
         if (!response.ok) {

@@ -19,8 +19,8 @@ export interface SkillsData {
   operating_systems: string[];
   web_servers_proxies: string[];
   other_technologies_concepts: string[];
-  brief_job_description: string[];
   other_relevent_info: string[];
+  brief_skill_description: string[];
 }
 
 export interface SimilarSkill {

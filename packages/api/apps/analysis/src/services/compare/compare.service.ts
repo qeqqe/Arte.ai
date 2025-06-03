@@ -161,7 +161,11 @@ export class CompareService {
       .limit(1)
       .then((rows) => rows[0]);
 
-    if (!userProcessedSkills) {
+    if (
+      !userProcessedSkills ||
+      userProcessedSkills.userProcessedSkills.brief_skill_description.length ===
+        0
+    ) {
       try {
         this.logger.log(`User not found: ${userId}`);
         await this.statService.getUserSkillInfo(userId);

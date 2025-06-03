@@ -69,8 +69,7 @@ export class AuthController {
       res.redirect(
         `${frontendUrl}/${
           onboardingStatus.leetcode === true ||
-          onboardingStatus.github === true ||
-          onboardingStatus.resume === true
+          (onboardingStatus.github === true && onboardingStatus.resume === true)
             ? 'dashboard'
             : 'onboarding'
         }`,

@@ -17,8 +17,6 @@ export function DashboardContent() {
         return <JobAnalysisView />;
       case 'my-data':
         return <MyDataView />;
-      case 'profile':
-        return <div className="p-6">Profile Setting will go here</div>;
       default:
         return <DashboardView />;
     }

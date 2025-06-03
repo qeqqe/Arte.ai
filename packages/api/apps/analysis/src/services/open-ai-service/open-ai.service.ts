@@ -135,8 +135,8 @@ export class OpenAi implements OnModuleInit {
       "operating_systems": [],
       "web_servers_proxies": [],
       "other_technologies_concepts": [],
-      "brief_job_description": [],
-      "other_relevent_info": []
+      "other_relevent_info": [],
+      "brief_skill_description": []
     }
 
     For each skill found, include:
