@@ -57,6 +57,13 @@
       "when": 1748331120656,
       "tag": "0008_woozy_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1748939256222,
+      "tag": "0009_unusual_manta",
+      "breakpoints": true
     }
   ]
 }

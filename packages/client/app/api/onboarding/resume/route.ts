@@ -14,9 +14,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const ingestionUrl = process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL;
+    const ingestionUrl =
+      process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL ||
+      'http://host.docker.internal:3002';
 
-    // Create a new FormData to forward the file
     const backendFormData = new FormData();
     backendFormData.append('file', file);
 
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${accessToken}`,
       },
       body: backendFormData,
+      credentials: 'include',
     });
 
     if (!response.ok) {

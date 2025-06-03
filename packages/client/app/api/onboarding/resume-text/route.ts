@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ingestionUrl = process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL;
+    const ingestionUrl =
+      process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL || 'http://localhost:3002';
 
     const response = await fetch(`${ingestionUrl}/resume/upload-text`, {
       method: 'POST',
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ text }),
+      credentials: 'include',
     });
 
     if (!response.ok) {

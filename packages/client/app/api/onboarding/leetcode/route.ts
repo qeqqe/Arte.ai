@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ingestionUrl = process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL;
+    const ingestionUrl =
+      process.env.NEXT_PUBLIC_BACKEND_INGESTION_URL || 'http://localhost:3002';
 
     const response = await fetch(`${ingestionUrl}/leetcode`, {
       method: 'POST',

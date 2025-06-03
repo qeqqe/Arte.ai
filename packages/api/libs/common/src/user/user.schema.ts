@@ -34,8 +34,8 @@ export const users = pgTable('users', {
       operating_systems: [],
       web_servers_proxies: [],
       other_technologies_concepts: [],
-      brief_job_description: [],
       other_relevent_info: [],
+      brief_skill_description: [],
     }),
   onboardingStatus: jsonb('onboarding_status')
     .$type<{ github: boolean; leetcode: boolean; resume: boolean }>()

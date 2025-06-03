@@ -37,7 +37,7 @@ import {
   useConnectedDataSources,
   useUserSkills,
 } from '@/hooks/use-dashboard-data';
-import { Skill } from '@/types/dashboard';
+import { Skill, BackendSkill } from '@/types/dashboard';
 
 export function MyDataView() {
   const {
@@ -136,8 +136,33 @@ export function MyDataView() {
     return <BookOpen className={iconClass} />;
   };
 
-  const renderSkillCategory = (skills: Skill[], categoryName: string) => {
+  const renderSkillCategory = (
+    skills: string[] | Skill[] | BackendSkill[],
+    categoryName: string
+  ) => {
     if (!skills || skills.length === 0) return null;
+
+    const normalizedSkills: Skill[] = skills.map((skill) => {
+      if (typeof skill === 'string') {
+        return {
+          skill_name: skill,
+          skill: skill,
+          proficiency_score: 50,
+          proficiency: 50,
+          evidence_source: 'Auto-generated',
+        };
+      }
+      if (skill && typeof skill === 'object' && 'name' in skill) {
+        return {
+          skill_name: skill.name as string,
+          skill: skill.name as string,
+          proficiency_score: (skill as any).proficiency || 50,
+          proficiency: (skill as any).proficiency || 50,
+          evidence_source: (skill as any).evidence || 'No evidence provided',
+        };
+      }
+      return skill as Skill;
+    });
 
     const getSkillLevel = (score: number) => {
       if (score >= 80)
@@ -183,7 +208,7 @@ export function MyDataView() {
           <h3>{categoryName.replace(/^[^\w\s]+\s/, '')}</h3>
         </div>
         <div className="space-y-3">
-          {skills.map((skill, index) => {
+          {normalizedSkills.map((skill, index) => {
             const scoreValue =
               skill.proficiency_score || skill.proficiency || 0;
             const validScore =
@@ -449,10 +474,10 @@ export function MyDataView() {
                       userSkills.other_relevent_info,
                       'Key Insights & Achievements'
                     )}
-                  {userSkills.brief_job_description &&
-                    userSkills.brief_job_description.length > 0 &&
+                  {userSkills.brief_skill_description &&
+                    userSkills.brief_skill_description.length > 0 &&
                     renderInfoSection(
-                      userSkills.brief_job_description,
+                      userSkills.brief_skill_description,
                       'Professional Summary'
                     )}
                 </div>

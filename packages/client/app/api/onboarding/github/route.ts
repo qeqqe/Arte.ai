@@ -13,11 +13,7 @@ export async function GET(request: NextRequest) {
   );
 
   try {
-    // We need to use a more direct network approach
     const ingestionUrl = 'http://host.docker.internal:3002';
-    console.log(
-      `Connecting to ingestion service at: ${ingestionUrl}/github/user-github`
-    );
 
     const response = await fetch(`${ingestionUrl}/github/user-github`, {
       method: 'GET',

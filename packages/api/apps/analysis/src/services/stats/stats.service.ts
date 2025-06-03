@@ -35,7 +35,7 @@ export class StatsService {
       if (
         userProcessedSkills &&
         typeof userProcessedSkills === 'object' &&
-        Object.keys(userProcessedSkills.brief_job_description).length > 0
+        Object.keys(userProcessedSkills.brief_skill_description).length > 0
       ) {
         this.logger.log(`Found existing processed skills for user: ${userId}`);
         return userProcessedSkills;

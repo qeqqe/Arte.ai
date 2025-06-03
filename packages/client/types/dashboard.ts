@@ -168,30 +168,36 @@ export interface Skill {
   proficiency?: number;
 }
 
+export interface BackendSkill {
+  name: string;
+  evidence: string;
+  proficiency: number;
+}
+
 export interface UserSkillsData {
-  security?: Skill[];
-  languages?: Skill[];
-  devops_cicd?: Skill[];
-  cloud_platforms?: Skill[];
-  testing_quality?: Skill[];
-  ai_ml_datascience?: Skill[];
-  operating_systems?: Skill[];
-  apis_communication?: Skill[];
-  mobile_development?: Skill[];
-  database_tools_orms?: Skill[];
-  frontend_styling_ui?: Skill[];
+  security?: string[] | Skill[] | BackendSkill[];
+  languages?: string[] | Skill[] | BackendSkill[];
+  devops_cicd?: string[] | Skill[] | BackendSkill[];
+  cloud_platforms?: string[] | Skill[] | BackendSkill[];
+  testing_quality?: string[] | Skill[] | BackendSkill[];
+  ai_ml_datascience?: string[] | Skill[] | BackendSkill[];
+  operating_systems?: string[] | Skill[] | BackendSkill[];
+  apis_communication?: string[] | Skill[] | BackendSkill[];
+  mobile_development?: string[] | Skill[] | BackendSkill[];
+  database_tools_orms?: string[] | Skill[] | BackendSkill[];
+  frontend_styling_ui?: string[] | Skill[] | BackendSkill[];
   other_relevent_info?: string[];
-  web_servers_proxies?: Skill[];
-  databases_datastores?: Skill[];
-  brief_job_description?: string[];
-  monitoring_observability?: Skill[];
-  backend_frameworks_runtime?: Skill[];
-  methodologies_collaboration?: Skill[];
-  other_technologies_concepts?: Skill[];
-  architecture_design_patterns?: Skill[];
-  frontend_frameworks_libraries?: Skill[];
-  infrastructure_as_code_config?: Skill[];
+  web_servers_proxies?: string[] | Skill[] | BackendSkill[];
+  databases_datastores?: string[] | Skill[] | BackendSkill[];
+  monitoring_observability?: string[] | Skill[] | BackendSkill[];
+  backend_frameworks_runtime?: string[] | Skill[] | BackendSkill[];
+  methodologies_collaboration?: string[] | Skill[] | BackendSkill[];
+  other_technologies_concepts?: string[] | Skill[] | BackendSkill[];
+  architecture_design_patterns?: string[] | Skill[] | BackendSkill[];
+  frontend_frameworks_libraries?: string[] | Skill[] | BackendSkill[];
+  infrastructure_as_code_config?: string[] | Skill[] | BackendSkill[];
   skill_gaps?: string[];
   key_strengths?: string[];
   brief_description?: string;
+  brief_skill_description?: string[];
 }

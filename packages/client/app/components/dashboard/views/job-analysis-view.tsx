@@ -263,41 +263,7 @@ export function JobAnalysisView() {
   }
 
   // Mock data for fallback
-  const analyzedJobs: Job[] = [
-    {
-      id: 1,
-      title: 'Senior Frontend Developer',
-      company: 'TechCorp Inc.',
-      location: 'Remote',
-      logo: '/placeholder.svg?height=40&width=40',
-      comparison: {
-        matchPercentage: 85,
-      },
-      skillTags: ['React', 'TypeScript', 'Next.js'],
-    },
-    {
-      id: 2,
-      title: 'Full Stack Engineer',
-      company: 'InnovateSoft',
-      location: 'San Francisco, CA',
-      logo: '/placeholder.svg?height=40&width=40',
-      comparison: {
-        matchPercentage: 72,
-      },
-      skillTags: ['JavaScript', 'Node.js', 'MongoDB'],
-    },
-    {
-      id: 3,
-      title: 'React Developer',
-      company: 'WebSolutions',
-      location: 'New York, NY',
-      logo: '/placeholder.svg?height=40&width=40',
-      comparison: {
-        matchPercentage: 91,
-      },
-      skillTags: ['React', 'Redux', 'CSS'],
-    },
-  ];
+  const analyzedJobs: Job[] = [];
 
   // Transform API data to our Job format if available
   const currentJobs = showingAll ? allJobs : recentJobs;
